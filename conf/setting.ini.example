@@ -1,0 +1,23 @@
+;
+;
+[ldap]
+uri = ldap://example.com:389/
+search_basedn = "dc=example,dc=com"
+search_nameattr   = uid
+search_mailattr   = mail
+
+[totp]
+issuer=Example Company Limited
+digits=6
+period=30
+
+[cron]
+interval_sec_of_maintenance=10
+period_min_of_execution=5
+lifetime_min_of_request=720
+write_command="bin/write_apache_setting.php"
+reload_command="bin/reload_apache2.php"
+
+[web]
+base_url = https://example.com/otpaccessctl/
+expiration_min_of_issue = 15

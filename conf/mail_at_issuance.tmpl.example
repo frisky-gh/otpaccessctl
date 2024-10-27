@@ -1,0 +1,9 @@
+Hi {{ username }},
+
+Your MFA account has been issued.
+
+  Issuance time: {{ now }}
+  Expire after : {{ expiration_min_of_issue }} min.
+
+URL: {{ base_url }}/activate.php?username={{ username }}&sessionkey={{ sessionkey }}
+

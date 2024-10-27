@@ -1,0 +1,11 @@
+/log/*
+/conf/*.ini
+/conf/*.tmpl
+/status/accepted/*
+/status/active/*
+/status/expired/*
+/status/inactive/*
+/status/req/*
+/status/setting/*
+/status/acceptedlist
+/status/lock

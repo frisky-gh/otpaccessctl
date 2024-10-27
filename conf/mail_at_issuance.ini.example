@@ -1,0 +1,5 @@
+;
+Subject="Your MFA account has been issued"
+; Field "From" should not include bulti-byte string.
+From="System <admin@exapmle.com>"
+

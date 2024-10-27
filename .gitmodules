@@ -1,0 +1,3 @@
+[submodule "lib/php-totp"]
+	path = lib/php-totp
+	url = https://github.com/lfkeitel/php-totp.git
