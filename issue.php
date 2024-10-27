@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>PHPOTPLDAPAdmin: Issue QR code</title>
+    <title>OTPAccessCtl: Issue MFA Account</title>
     <style>
       .error-message { color: red; }
     </style>

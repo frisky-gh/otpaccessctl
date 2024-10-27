@@ -35,24 +35,28 @@ try{
 
 }catch(Exception $e) {
 	$message = $e->getMessage();
-	print "<div>捕捉した例外: {$message}</div>\n";
 	log_info("exception: catch.", ["message" => $message]);
 } finally {
 }
 
 ?><html>
   <head>
+    <?php if( isset($svg) ){ ?>
+        <title>OTPAccessCtl: Your MFA Account has been activated</title>
+    <?php }else{ ?>
+        <title>OTPAccessCtl: Error</title>
+    <?php } ?>
   </head>
   <body>
     <?php if( isset($svg) ){ ?>
       <div>
-	<?= htmlspecialchars($username) ?> さん<br>
-        Google Authenticator 等で下記のQRコードを読み取ってください。
+	Hi <?= htmlspecialchars($username) ?>-san,<br>
+        Please scan the QR code bellow with Google Authenticator or similar app.
       </div>
       <?= $svg ?>
     <?php }else{ ?>
       <div>
-        エラー
+        Error.
       </div>
     <?php } ?>
   <body>

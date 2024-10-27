@@ -34,8 +34,7 @@ try{
 	if( !$r ) throw new ErrorException("store_repository");
 	log_info("store_repository: success.", ["username" => $username, "sessionkey" => $sessionkey]);
 
-	#$r = send_mail_at_issuance( $setting, $mail, $username, $sessionkey, time() + 15 * 60 );
-	$r = send_mail_at_issuance( $setting, "friskymonpetit@gmail.com", $username, $sessionkey );
+	$r = send_mail_at_issuance( $setting, $mail, $username, $sessionkey );
 	if( !$r ) throw new ErrorException("send_mail_at_issuence");
 	log_info("send_mail_at_issuance: success.", ["username" => $username, "sessionkey" => $sessionkey, "mail" => $mail]);
 

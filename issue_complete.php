@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>PHPOTPLDAPAdmin: Complete Issuance</title>
+    <title>OTPAccessCtl: Complete Issuance</title>
   </head>
   <body>
-    OTP の発行が完了しました.<br>
-    メールの指示に従ってQRコードを取り込んでください.
+    Your MFA account has been issued.<br>
+    Please receive the issuance mail, and follow the instructions in the mail to import your account into your authenticator app.
   </body>
 </html>

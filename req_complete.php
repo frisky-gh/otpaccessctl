@@ -17,7 +17,6 @@ try{
 
 }catch(Exception $e) {
 	$message = $e->getMessage();
-	print "<div>捕捉した例外: {$message}</div>\n";
 	log_info("exception: catch.", ["message" => $message]);
 } finally {
 }

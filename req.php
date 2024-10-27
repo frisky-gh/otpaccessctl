@@ -21,7 +21,7 @@ try{
 ?><!DOCTYPE html>
 <html>
   <head>
-    <title>PHPOTPLDAPAdmin: Sign in</title>
+    <title>OTPAccessCtl: Sign in</title>
   </head>
   <body>
     <form method="POST" action="req_auth.php">
