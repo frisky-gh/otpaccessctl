@@ -14,11 +14,11 @@ try{
 	$username = $_POST["username"];
 	$password = $_POST["password"];
 	$token = $_POST["token"];
-	log_info("validate_inputs: success.", ["username" => $username, "password" => $password, "token" => $token]);
+	log_info("validate_inputs: success.", ["username" => $username, "token" => $token]);
 
 	$mail = auth_by_ldap($setting, $username, $password);
 	if( !$mail ) throw new ErrorException("auth_by_ldap");
-	log_info("auth_by_ldap: success.", ["username" => $username, "password" => $password, "mail" => $mail]);
+	log_info("auth_by_ldap: success.", ["username" => $username, "mail" => $mail]);
 
 	$repo = load_repository( $username );
 	if( !$repo ) throw new ErrorException("load_repository");

@@ -1,0 +1,4 @@
+Require all denied
+<Files "*.php">
+	Require all granted
+</Files>

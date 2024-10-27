@@ -9,3 +9,4 @@
 /status/setting/*
 /status/acceptedlist
 /status/lock
+!.gitkeep
