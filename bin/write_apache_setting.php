@@ -1,6 +1,7 @@
 #!/usr/bin/php
 <?php
 
+require(__DIR__."/../lib/common.php");
 require(__DIR__."/../lib/common_cli.php");
 
 function store_apache_setting ( $content ) {

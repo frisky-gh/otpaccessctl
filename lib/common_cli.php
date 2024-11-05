@@ -14,6 +14,7 @@ $procname = preg_replace('|^.*/|', "", $argv[0]);
 function log_tty( $message ) {
 	global $tty;
 	global $procname;
+	if( $tty == false ) return;
 	echo "{$procname}: {$message}\n";
 }
 

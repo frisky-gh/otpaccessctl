@@ -351,33 +351,35 @@ function maintenance_requests ( $setting, $must_be_cleaned_up = true ) {
 	       	cleanup_requests( $setting, $acceptedlist_is_changed );
 		log_tty("cleanup the old requests.");
 	}
-	if( !$acceptedlist_is_changed ) return;
+	if( !$must_be_cleaned_up && !$acceptedlist_is_changed ) return;
 
 	$acceptedlist      = generate_acceptedlist();
 	$last_acceptedlist = load_acceptedlist();
-	if( two_acceptedlists_are_diffent($acceptedlist, $last_acceptedlist) ){
-		log_info("the accepted list should be updated.");
-		log_tty("the accepted list should be updated.");
-		store_acceptedlist( $acceptedlist );
+	if( !two_acceptedlists_are_diffent($acceptedlist, $last_acceptedlist) ) return;
 
-		$write_command  = $setting["cron"]["write_command"];
-		$reload_command = $setting["cron"]["reload_command"];
-		if( $write_command != "" ){
-			log_tty( "write_command: {$write_command}" );
-			$output = system( "{$write_command}", $result );
-			log_tty("write_command: output={$output}, result={$result}");
-			if( $result != 0 ) return ;
-		}
-		if( $reload_command != "" ){
-			log_tty( "reload_command: {$reload_command}" );
-			$output = system( "{$reload_command}", $result );
-			log_tty("reload_command: output={$output}, result={$result}");
-			if( $result != 0 ) return ;
-		}
+	log_info("the accepted list should be updated.");
+	log_tty("the accepted list should be updated.");
+	store_acceptedlist( $acceptedlist );
 
-		log_info("done.");
-		log_tty("done.");
+	$write_command  = $setting["cron"]["write_command"];
+	$reload_command = $setting["cron"]["reload_command"];
+	if( $write_command != "" ){
+		log_tty( "write_command: {$write_command}" );
+		$output = system( "{$write_command}", $result );
+		log_tty("write_command: output={$output}, result={$result}");
+		log_info( "write_command: {$write_command}" );
+		if( $result != 0 ) return ;
 	}
+	if( $reload_command != "" ){
+		log_tty( "reload_command: {$reload_command}" );
+		$output = system( "{$reload_command}", $result );
+		log_tty("reload_command: output={$output}, result={$result}");
+		log_info("reload_command: output={$output}, result={$result}");
+		if( $result != 0 ) return ;
+	}
+
+	log_info("done.");
+	log_tty("done.");
 }
 
 

@@ -8,6 +8,9 @@ try{
 	set_channel_of_log("activate");
 	log_info("load_setting: success.");
 
+	if( $_SERVER['REQUEST_METHOD']  == "HEAD" ) throw new ErrorException("access_from_bot");
+	if( $_SERVER['HTTP_USER_AGENT'] == "" )     throw new ErrorException("access_from_bot");
+
 	validate_inputs();
 	$username = $_GET["username"];
 	$sessionkey = $_GET["sessionkey"];
