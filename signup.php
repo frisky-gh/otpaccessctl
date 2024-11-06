@@ -5,7 +5,7 @@ require("lib/common.php");
 
 try{
 	$setting = load_setting();
-	set_channel_of_log("req");
+	set_channel_of_log("signup");
 	log_info("load_setting: success.");
 
 	validate_inputs();
@@ -21,13 +21,13 @@ try{
 ?><!DOCTYPE html>
 <html>
   <head>
-    <title>OTPAccessCtl: Issue MFA Account</title>
+  <title><?= $setting["web"]["app_name"] ?>: Issue MFA Account</title>
     <style>
       .error-message { color: red; }
     </style>
   </head>
   <body>
-    <form method="POST" action="issue_auth.php">
+    <form method="POST" action="signup_auth.php">
 
       <div>
         username: <br>

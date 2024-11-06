@@ -69,6 +69,7 @@ function load_setting() {
 	$setting["web"]["base_url"] = preg_replace('|/$|', '', $setting["web"]["base_url"] );
 	$setting["web"]["expiration_min_of_issue"] ??= 15;
 	$setting["web"]["auth_method"] ??= "maildomain";
+	$setting["web"]["app_name"]    ??= "OTPAccessCtl";
 
 	return $setting;
 }
@@ -153,23 +154,23 @@ function generate_sessionkey () {
 	return bin2hex( random_bytes(32) );
 }
 
-function generate_otpauth_url ($username, $setting, $repository) {
+function generate_otpauth_url ($username, $setting, $account) {
 	$accountname = urlencode( $username );
 	$issuer = urlencode( $setting["totp"]["issuer"] );
 	$digits = intval( $setting["totp"]["digits"] );
 	$period = intval( $setting["totp"]["period"] );
-	$secret = urlencode( $repository["totpsecret"] );
+	$secret = urlencode( $account["totpsecret"] );
 	$url = "otpauth://totp/{$issuer}:{$accountname}?secret={$secret}&issuer={$issuer}&algorithm=SHA1&digits={$digits}&period={$period}";
 	return $url;
 }
 
-function generate_token ($setting, $repository) {
+function generate_token ($setting, $account) {
 	global $base32;
 
 	$period = $setting["totp"]["period"];
 	$digits = $setting["totp"]["digits"];
 
-	$totpsecret         = $repository["totpsecret"];
+	$totpsecret         = $account["totpsecret"];
 	$totpsecret_decoded = $base32->decode($totpsecret);
 
 	$totp  = new \lfkeitel\phptotp\Totp( "sha1", 0, $period );
@@ -190,50 +191,50 @@ function generate_qrcode ($text) {
 	return $svg;
 }
 
-//// functions about file input / output
+//// functions about account file input / output
 
-function remove_repository ($username) {
-	$active   = "status/active/{$username}.ini";
-	$inactive = "status/inactive/{$username}.ini";
-	if( file_exists($active) ){
-		if( !unlink($active) ){
+function remove_account ($username) {
+	$acctfile = "status/account/{$username}.ini";
+	$reqfile  = "status/account_requested/{$username}.ini";
+	if( file_exists($acctfile) ){
+		if( !unlink($acctfile) ){
 			return false;
 		}
 	}
-	if( file_exists($inactive) ){
-		if( !unlink($inactive) ){
+	if( file_exists($reqfile) ){
+		if( !unlink($reqfile) ){
 			return false;
 		}
 	}
 	return true;
 }
 
-function load_repository ($username, $load_repository_in_active = true, $load_repository_in_inactive = true) {
-	$active = "status/active/{$username}.ini";
-	if( $load_repository_in_active && file_exists($active) ){
-		$repo = parse_ini_file( $active );
-		if( $repo != false ) return $repo;
+function load_account ($username, $load_account_in_valid = true, $load_account_in_requested = true) {
+	$acctfile = "status/account/{$username}.ini";
+	if( $load_account_in_valid && file_exists($active) ){
+		$acct = parse_ini_file( $active );
+		if( $acct != false ) return $acct;
 	}
 
-	$inactive = "status/inactive/{$username}.ini";
-	if( $load_repository_in_inactive && file_exists($inactive) ){
-		$repo = parse_ini_file( $inactive );
-		if( $repo != false ) return $repo;
+	$reqfile  = "status/account_requested/{$username}.ini";
+	if( $load_account_in_requested && file_exists($reqfile) ){
+		$acct = parse_ini_file( $reqfile );
+		if( $acct != false ) return $acct;
 	}
 
 	return null;
 }
 
-function activate_repository ($username) {
-	$active   = "status/active/{$username}.ini";
-	$inactive = "status/inactive/{$username}.ini";
-	if( file_exists($active) )    return false;
-	if( !file_exists($inactive) ) return false;
-	if( !rename($inactive, $active) ) return false;
+function activate_account ($username) {
+	$acctfile = "status/account/{$username}.ini";
+	$reqfile  = "status/account_requested/{$username}.ini";
+	if( file_exists($acctfile) ) return false;
+	if( !file_exists($reqfile) ) return false;
+	if( !rename($reqfile, $active) ) return false;
 	return true;
 }
 
-function store_repository ($username, $totpsecret, $sessionkey) {
+function store_account ($username, $totpsecret, $sessionkey) {
 	$now = time();
 	$content = "";
 	$content .= "username={$username}\n";
@@ -241,11 +242,13 @@ function store_repository ($username, $totpsecret, $sessionkey) {
 	$content .= "sessionkey={$sessionkey}\n";
 	$content .= "creationtime={$now}\n";
 
-	file_put_contents("status/inactive/{$username}.ini", $content);
+	file_put_contents("status/account_requested/{$username}.ini", $content);
 	return true;
 }
 
-function store_request ($username, $sessionkey, $ipaddr) {
+//// functions about pass file input / output
+
+function store_pass ($username, $sessionkey, $ipaddr) {
 	$now = time();
 	$content = "";
 	$content .= "username={$username}\n";
@@ -253,17 +256,30 @@ function store_request ($username, $sessionkey, $ipaddr) {
 	$content .= "ipaddr={$ipaddr}\n";
 	$content .= "creationtime={$now}\n";
 
-	file_put_contents("status/req/{$sessionkey}.ini", $content);
+	file_put_contents("status/pass_requested/{$sessionkey}.ini", $content);
 	return true;
 }
 
-function request_is_accepted ($sessionkey) {
-	if( file_exists("status/req/{$sessionkey}.ini") )      return false;
-	if( file_exists("status/accepted/{$sessionkey}.ini") ) return true;
+function pass_is_accepted ($sessionkey) {
+	$passfile = "status/pass/{$sessionkey}.ini";
+	$reqfile  = "status/pass_requested/{$sessionkey}.ini";
+	if( file_exists($reqfile) )  return false;
+	if( file_exists($passfile) ) return true;
 	return false;
 }
 
-//// functions about management of requests
+function accept_requests( &$acceptedlist_is_changed ) {
+	$dh = opendir( "status/pass_requested" );
+	while( false !== ($entry = readdir($dh)) ){
+		if( !preg_match('/^[0-9a-f]+\.ini$/', $entry) ) continue;
+		$src = "status/pass_requested/".$entry;
+		$dst = "status/pass/".$entry;
+		rename( $src, $dst );
+		$acceptedlist_is_changed = true;
+	}
+	return true;
+}
+
 function direct_cleanup() {
 	touch( "status/cleanup" );
 }
@@ -273,20 +289,8 @@ function cleanup_is_directed() {
 	return $r;
 }
 
-function accept_requests( &$acceptedlist_is_changed ) {
-	$dh = opendir( "status/req" );
-	while( false !== ($entry = readdir($dh)) ){
-		if( !preg_match('/^[0-9a-f]+\.ini$/', $entry) ) continue;
-		$src = "status/req/".$entry;
-		$dst = "status/accepted/".$entry;
-		rename( $src, $dst );
-		$acceptedlist_is_changed = true;
-	}
-	return true;
-}
-
 function cleanup_requests( $setting, &$acceptedlist_is_changed ) {
-	$dh = opendir( "status/accepted" );
+	$dh = opendir( "status/pass" );
 	$time = time();
 	while( false !== ($entry = readdir($dh)) ){
 		if( !preg_match('/^[0-9a-f]+\.ini$/', $entry) ) continue;
@@ -306,12 +310,14 @@ function cleanup_requests( $setting, &$acceptedlist_is_changed ) {
 	return true;
 }
 
+//// functions about management of accepted pass
+
 function generate_acceptedlist() {
-	$dh = opendir( "status/accepted" );
+	$dh = opendir( "status/pass" );
 	$accepted = [];
 	while( false !== ($entry = readdir($dh)) ){
 		if( !preg_match('/^[0-9a-f]+\.ini$/', $entry) ) continue;
-		$acceptedfile = parse_ini_file( "status/accepted/".$entry );
+		$acceptedfile = parse_ini_file( "status/pass/".$entry );
 
 		$ipaddr = $acceptedfile["ipaddr"];
 		$accepted[$ipaddr] = 1;
@@ -344,7 +350,7 @@ function store_acceptedlist( $acceptedlist ) {
 	file_put_contents("status/acceptedlist", $acceptedlist_concat);
 }
 
-function maintenance_requests ( $setting, $must_be_cleaned_up = true ) {
+function maintain_passes ( $setting, $must_be_cleaned_up = true ) {
 	$acceptedlist_is_changed = false;
 	accept_requests( $acceptedlist_is_changed );
 	log_tty("accepted the new requests.");

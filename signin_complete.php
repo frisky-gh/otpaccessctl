@@ -5,7 +5,7 @@ require("lib/common.php");
 
 try{
 	$setting = load_setting();
-	set_channel_of_log("req_complete");
+	set_channel_of_log("signin_complete");
 	log_info("load_setting: success.");
 
 	validate_inputs();
@@ -25,10 +25,10 @@ try{
 <html>
   <head>
     <?php if( $r ){ ?>
-        <title>OTPAccessCtl: Accepted!</title>
+        <title><?= $setting["web"]["app_name"] ?>: Accepted!</title>
     <?php }else{ ?>
-        <meta http-equiv="refresh" content="10; URL=req_complete.php?sessionkey=<?= $sessionkey ?>" />
-        <title>OTPAccessCtl: Waiting</title>
+        <meta http-equiv="refresh" content="5; URL=signin_complete.php?sessionkey=<?= $sessionkey ?>" />
+	<title><?= $setting["web"]["app_name"] ?>: Waiting</title>
     <?php } ?>
   </head>
   <body>

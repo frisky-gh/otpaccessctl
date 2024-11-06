@@ -5,7 +5,7 @@ require("lib/common.php");
 
 try{
 	$setting = load_setting();
-	set_channel_of_log("activate");
+	set_channel_of_log("signup_activate");
 	log_info("load_setting: success.");
 
 	if( $_SERVER['REQUEST_METHOD']  == "HEAD" ) throw new ErrorException("access_from_bot");
@@ -16,22 +16,22 @@ try{
 	$sessionkey = $_GET["sessionkey"];
 	log_info("validate_inputs: success.", ["username" => $username, "sessionkey" => $sessionkey]);
 
-	$repo = load_repository($username, false, true);
-	if( !$repo ) throw new ErrorException("load_repository");
-	log_info("load_repository: success.", ["username" => $username, "repo" => $repo]);
+	$acct = load_account($username, false, true);
+	if( !$acct ) throw new ErrorException("load_account");
+	log_info("load_account: success.", ["username" => $username, "acct" => $acct]);
 
-	$repo_sessionkey = $repo["sessionkey"];
-	if( $repo_sessionkey != $sessionkey ) throw new ErrorException("session_keys_are_mismatched");
+	$acct_sessionkey = $acct["sessionkey"];
+	if( $acct_sessionkey != $sessionkey ) throw new ErrorException("session_keys_are_mismatched");
 
 	$now = time();
-	$expiration_limit = $repo["creationtime"] + $setting["web"]["expiration_min_of_issue"] * 60;
+	$expiration_limit = $acct["creationtime"] + $setting["web"]["expiration_min_of_issue"] * 60;
 	if( $now > $expiration_limit ) throw new ErrorException("issue_is_expired");
 
-	$r = activate_repository($username);
-	if( !$r ) throw new ErrorException("activate_repository");
-	log_info("activate_repository: success.", ["username" => $username]);
+	$r = activate_account($username);
+	if( !$r ) throw new ErrorException("activate_account");
+	log_info("activate_acccount: success.", ["username" => $username]);
 
-	$url = generate_otpauth_url($username, $setting, $repo);
+	$url = generate_otpauth_url($username, $setting, $acct);
 	log_info("generate_otpauth_url: success.", ["username" => $username, "url" => $url]);
 
 	$svg = generate_qrcode($url);
@@ -45,9 +45,9 @@ try{
 ?><html>
   <head>
     <?php if( isset($svg) ){ ?>
-        <title>OTPAccessCtl: Your MFA Account has been activated</title>
+      <title><?= $setting["web"]["app_name"] ?>: Your MFA Account has been activated</title>
     <?php }else{ ?>
-        <title>OTPAccessCtl: Error</title>
+      <title><?= $setting["web"]["app_name"] ?>: Error</title>
     <?php } ?>
   </head>
   <body>

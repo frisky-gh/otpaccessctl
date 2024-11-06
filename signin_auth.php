@@ -3,11 +3,11 @@
 // load libraries
 require("lib/common.php");
 
-$location = "req_complete.php";
+$location = "signin_complete.php";
 
 try{
 	$setting = load_setting();
-	set_channel_of_log("req_auth");
+	set_channel_of_log("signin_auth");
 	log_info("load_setting: success.");
 
 	validate_inputs();
@@ -27,11 +27,11 @@ try{
 		throw new ErrorException("unknown_auth_method");
 	}
 
-	$repo = load_repository( $username );
-	if( !$repo ) throw new ErrorException("load_repository");
-	log_info("load_repository: success.", ["repo" => $repo]);
+	$acct = load_account( $username );
+	if( !$acct ) throw new ErrorException("load_account");
+	log_info("load_account: success.", ["acct" => $acct]);
 
-	$server_token = generate_token( $setting, $repo );
+	$server_token = generate_token( $setting, $acct );
 	if( !$server_token ) throw new ErrorException("generate_token");
 	log_info("generate_token: success.", ["server_token" => $server_token]);
 
@@ -55,13 +55,13 @@ try{
 		throw new ErrorException("unknown_auth_method");
 	}
 
-	$location = "req_complete.php?sessionkey={$sessionkey}";
+	$location = "signin_complete.php?sessionkey={$sessionkey}";
 
 }catch(Exception $e) {
 	$message = $e->getMessage();
 	print "<div>捕捉した例外: {$message}</div>\n";
 	log_info("exception: catch.", ["message" => $message]);
-	$location = "req.php?message={$message}";
+	$location = "signin.php?message={$message}";
 } finally {
 }
 

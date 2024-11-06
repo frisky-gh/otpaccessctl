@@ -19,7 +19,7 @@ try{
 		exit(2);
 	}
 
-	maintenance_requests($setting, true);
+	maintain_passes($setting, true);
 	standby_during_period_of_exec (
 		$setting,
 		function() use ($setting) { maintenance_requests($setting, false); }

@@ -5,7 +5,7 @@ require("lib/common.php");
 
 try{
 	$setting = load_setting();
-	set_channel_of_log("req");
+	set_channel_of_log("signin");
 	log_info("load_setting: success.");
 
 	validate_inputs();
@@ -21,10 +21,10 @@ try{
 ?><!DOCTYPE html>
 <html>
   <head>
-    <title>OTPAccessCtl: Sign in</title>
+    <title><?= $setting["web"]["app_name"] ?>: Sign in</title>
   </head>
   <body>
-    <form method="POST" action="req_auth.php">
+    <form method="POST" action="signin_auth.php">
       <div>
         username: <br>
         <input type="text" name="username" value="">
@@ -44,7 +44,7 @@ try{
       <input type="submit" name="submit" value="use">
     </form>
 
-    <a href="issue.php">issue QR code for authenticator</a><br>
+    <a href="signup.php">issue QR code for authenticator</a><br>
 
 <?php
 	print "ok\n";

@@ -1,11 +1,11 @@
 /log/*
 /conf/*.ini
 /conf/*.tmpl
-/status/accepted/*
-/status/active/*
-/status/expired/*
-/status/inactive/*
-/status/req/*
+/status/pass/*
+/status/pass_expired/*
+/status/pass_requested/*
+/status/account/*
+/status/account_requested/*
 /status/setting/*
 /status/acceptedlist
 /status/lock
