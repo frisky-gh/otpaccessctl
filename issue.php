@@ -1,4 +1,24 @@
-<!DOCTYPE html>
+<?php
+
+// load libraries
+require("lib/common.php");
+
+try{
+	$setting = load_setting();
+	set_channel_of_log("req");
+	log_info("load_setting: success.");
+
+	validate_inputs();
+	$message = $_GET["message"];
+	log_info("validate_inputs: success.", ["message" => $message]);
+
+}catch(Exception $e) {
+	$message = $e->getMessage();
+	log_info("exception: catch.", ["message" => $message]);
+} finally {
+}
+
+?><!DOCTYPE html>
 <html>
   <head>
     <title>OTPAccessCtl: Issue MFA Account</title>
@@ -8,14 +28,19 @@
   </head>
   <body>
     <form method="POST" action="issue_auth.php">
+
       <div>
         username: <br>
         <input type="text" name="username" value="">
       </div>
-      <div>
-        password: <br>
-        <input type="password" name="password" value="">
-      </div>
+
+      <?php if( $setting["web"]["auth_method"] == "ldap" ){ ?>
+        <div>
+          password: <br>
+          <input type="password" name="password" value="">
+        </div>
+      <?php } ?>
+
       <input type="submit" name="submit" value="issue">
     </form>
 

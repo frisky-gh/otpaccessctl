@@ -16,9 +16,16 @@ try{
 	$token = $_POST["token"];
 	log_info("validate_inputs: success.", ["username" => $username, "token" => $token]);
 
-	$mail = auth_by_ldap($setting, $username, $password);
-	if( !$mail ) throw new ErrorException("auth_by_ldap");
-	log_info("auth_by_ldap: success.", ["username" => $username, "mail" => $mail]);
+	if     ( $setting["web"]["auth_method"] == "maildomain" ){
+
+	}elseif( $setting["web"]["auth_method"] == "ldap" ){
+		$mail = auth_by_ldap($setting, $username, $password);
+		if( !$mail ) throw new ErrorException("auth_by_ldap");
+		log_info("auth_by_ldap: success.", ["username" => $username, "mail" => $mail]);
+
+	}else{
+		throw new ErrorException("unknown_auth_method");
+	}
 
 	$repo = load_repository( $username );
 	if( !$repo ) throw new ErrorException("load_repository");
@@ -33,9 +40,20 @@ try{
 
 	$sessionkey = generate_sessionkey();
 	$ipaddr = $_SERVER['REMOTE_ADDR'];
-	$r = store_request($username, $sessionkey, $ipaddr);
-	if( !$r ) throw new ErrorException("store_request");
-	log_info("store_request: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
+
+	if     ( $setting["web"]["auth_method"] == "maildomain" ){
+		$r = store_request($username, $sessionkey, $ipaddr);
+		if( !$r ) throw new ErrorException("store_request");
+		log_info("store_request: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
+
+	}elseif( $setting["web"]["auth_method"] == "ldap" ){
+		$r = store_request($username, $sessionkey, $ipaddr);
+		if( !$r ) throw new ErrorException("store_request");
+		log_info("store_request: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
+
+	}else{
+		throw new ErrorException("unknown_auth_method");
+	}
 
 	$location = "req_complete.php?sessionkey={$sessionkey}";
 

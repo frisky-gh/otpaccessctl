@@ -68,6 +68,7 @@ function load_setting() {
 	$setting["web"]["base_url"] ??= "https://example.com/otpaccessctl/";
 	$setting["web"]["base_url"] = preg_replace('|/$|', '', $setting["web"]["base_url"] );
 	$setting["web"]["expiration_min_of_issue"] ??= 15;
+	$setting["web"]["auth_method"] ??= "maildomain";
 
 	return $setting;
 }

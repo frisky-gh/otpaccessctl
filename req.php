@@ -29,10 +29,14 @@ try{
         username: <br>
         <input type="text" name="username" value="">
       </div>
-      <div>
-        password: <br>
-        <input type="password" name="password" value="">
-      </div>
+
+      <?php if( $setting["web"]["auth_method"] == "ldap" ){ ?>
+        <div>
+          password: <br>
+          <input type="password" name="password" value="">
+        </div>
+      <?php } ?>
+
       <div>
         token: <br>
         <input type="text" name="token" value="">
