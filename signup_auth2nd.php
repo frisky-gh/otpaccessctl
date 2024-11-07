@@ -5,7 +5,7 @@ require("lib/common.php");
 
 try{
 	$setting = load_setting();
-	set_channel_of_log("signup_activate");
+	set_channel_of_log("signup_auth2nd");
 	log_info("load_setting: success.");
 
 	if( $_SERVER['REQUEST_METHOD']  == "HEAD" ) throw new ErrorException("access_from_bot");
@@ -27,9 +27,9 @@ try{
 	$expiration_limit = $acct["creationtime"] + $setting["web"]["expiration_min_of_issue"] * 60;
 	if( $now > $expiration_limit ) throw new ErrorException("issue_is_expired");
 
-	$r = activate_account($username);
-	if( !$r ) throw new ErrorException("activate_account");
-	log_info("activate_acccount: success.", ["username" => $username]);
+	$r = validate_account($username);
+	if( !$r ) throw new ErrorException("validate_account");
+	log_info("validate_acccount: success.", ["username" => $username]);
 
 	$url = generate_otpauth_url($username, $setting, $acct);
 	log_info("generate_otpauth_url: success.", ["username" => $username, "url" => $url]);

@@ -12,8 +12,19 @@ try{
 	$sessionkey = $_GET["sessionkey"];
 	log_info("validate_inputs: success.", ["sessionkey" => $sessionkey]);
 
-	$r = request_is_accepted( $sessionkey );
-	log_info("request_is_accepted: success.", ["r" => $r]);
+	if     ( $setting["web"]["auth_method"] == "maildomain" && $sessionkey == "" ){
+		// nothing to do
+
+	}elseif( $setting["web"]["auth_method"] == "maildomain" ){
+		$r = pass_is_activated( $sessionkey );
+		log_info("pass_is_activated: success.", ["r" => $r]);
+
+	}elseif( $setting["web"]["auth_method"] == "ldap" ){
+		$r = pass_is_activated( $sessionkey );
+		log_info("pass_is_activated: success.", ["r" => $r]);
+
+	}else{
+	}
 
 }catch(Exception $e) {
 	$message = $e->getMessage();
@@ -24,7 +35,9 @@ try{
 ?><!DOCTYPE html>
 <html>
   <head>
-    <?php if( $r ){ ?>
+    <?php if( $setting["web"]["auth_method"] == "maildomain" && !isset($sessionkey) ){ ?>
+        <title><?= $setting["web"]["app_name"] ?>: Successed!</title>
+    <?php }elseif( $r ){ ?>
         <title><?= $setting["web"]["app_name"] ?>: Accepted!</title>
     <?php }else{ ?>
         <meta http-equiv="refresh" content="5; URL=signin_complete.php?sessionkey=<?= $sessionkey ?>" />
@@ -32,7 +45,9 @@ try{
     <?php } ?>
   </head>
   <body>
-    <?php if( $r ){ ?>
+    <?php if( $setting["web"]["auth_method"] == "maildomain" ){ ?>
+	Authentication has been successed!
+    <?php }elseif( $r ){ ?>
 	Your request has been accepted!
     <?php }else{ ?>
         Waiting...

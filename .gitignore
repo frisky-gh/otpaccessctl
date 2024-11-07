@@ -3,9 +3,10 @@
 /conf/*.tmpl
 /status/pass/*
 /status/pass_expired/*
-/status/pass_requested/*
+/status/pass_unauthed/*
+/status/pass_inactive/*
 /status/account/*
-/status/account_requested/*
+/status/account_unauthed/*
 /status/setting/*
 /status/acceptedlist
 /status/lock

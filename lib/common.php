@@ -49,6 +49,10 @@ function load_setting() {
 	$setting["ldap"]["search_nameattr"]   ??= "cn";
 	$setting["ldap"]["search_mailattr"]   ??= "mail";
 
+	// maildomain section
+	$setting["maildomain"] ??= [];
+	$setting["maildomain"]["domain"] ??= "example.com";
+
 	// totp section
 	$setting["totp"] ??= [];
 	$setting["totp"]["issuer"] ??= "example.com";
@@ -194,43 +198,44 @@ function generate_qrcode ($text) {
 //// functions about account file input / output
 
 function remove_account ($username) {
-	$acctfile = "status/account/{$username}.ini";
-	$reqfile  = "status/account_requested/{$username}.ini";
-	if( file_exists($acctfile) ){
-		if( !unlink($acctfile) ){
+	$authedfile   = "status/account/{$username}.ini";
+	$unauthedfile = "status/account_unathed/{$username}.ini";
+	if( file_exists($authedfile) ){
+		if( !unlink($authedfile) ){
 			return false;
 		}
 	}
-	if( file_exists($reqfile) ){
-		if( !unlink($reqfile) ){
+	if( file_exists($unauthedfile) ){
+		if( !unlink($unauthedfile) ){
 			return false;
 		}
 	}
 	return true;
 }
 
-function load_account ($username, $load_account_in_valid = true, $load_account_in_requested = true) {
-	$acctfile = "status/account/{$username}.ini";
-	if( $load_account_in_valid && file_exists($active) ){
-		$acct = parse_ini_file( $active );
+function load_account ($username, $load_account_in_authed = true, $load_account_in_unauthed = true) {
+	$authedfile   = "status/account/{$username}.ini";
+	$unauthedfile = "status/account_unauthed/{$username}.ini";
+
+	if( $load_account_in_authed && file_exists($authedfile) ){
+		$acct = parse_ini_file( $authedfile );
 		if( $acct != false ) return $acct;
 	}
 
-	$reqfile  = "status/account_requested/{$username}.ini";
-	if( $load_account_in_requested && file_exists($reqfile) ){
-		$acct = parse_ini_file( $reqfile );
+	if( $load_account_in_unauthed && file_exists($unauthedfile) ){
+		$acct = parse_ini_file( $unauthedfile );
 		if( $acct != false ) return $acct;
 	}
 
 	return null;
 }
 
-function activate_account ($username) {
-	$acctfile = "status/account/{$username}.ini";
-	$reqfile  = "status/account_requested/{$username}.ini";
-	if( file_exists($acctfile) ) return false;
-	if( !file_exists($reqfile) ) return false;
-	if( !rename($reqfile, $active) ) return false;
+function validate_account ($username) {
+	$authedfile   = "status/account/{$username}.ini";
+	$unauthedfile = "status/account_unauthed/{$username}.ini";
+	if( file_exists($authedfile) )    return false;
+	if( !file_exists($unauthedfile) ) return false;
+	if( !rename($unauthedfile, $authedfile) ) return false;
 	return true;
 }
 
@@ -242,13 +247,15 @@ function store_account ($username, $totpsecret, $sessionkey) {
 	$content .= "sessionkey={$sessionkey}\n";
 	$content .= "creationtime={$now}\n";
 
-	file_put_contents("status/account_requested/{$username}.ini", $content);
+	file_put_contents("status/account_unauthed/{$username}.ini", $content);
 	return true;
 }
 
 //// functions about pass file input / output
 
-function store_pass ($username, $sessionkey, $ipaddr) {
+function store_pass ($sessionkey, $username, $ipaddr, $store_pass_as_authed) {
+	$unauthedfile = "status/pass_unauthed/{$sessionkey}.ini";
+	$authedfile   = "status/pass_inactive/{$sessionkey}.ini";
 	$now = time();
 	$content = "";
 	$content .= "username={$username}\n";
@@ -256,23 +263,51 @@ function store_pass ($username, $sessionkey, $ipaddr) {
 	$content .= "ipaddr={$ipaddr}\n";
 	$content .= "creationtime={$now}\n";
 
-	file_put_contents("status/pass_requested/{$sessionkey}.ini", $content);
+	if( $store_pass_as_authed ){ file_put_contents($authedfile,   $content); }
+	else                       { file_put_contents($unauthedfile, $content); }
 	return true;
 }
 
-function pass_is_accepted ($sessionkey) {
-	$passfile = "status/pass/{$sessionkey}.ini";
-	$reqfile  = "status/pass_requested/{$sessionkey}.ini";
-	if( file_exists($reqfile) )  return false;
-	if( file_exists($passfile) ) return true;
+function load_pass ($sessionkey, $load_pass_in_authed) {
+	$unauthedfile = "status/pass_unauthed/{$sessionkey}.ini";
+	$authedfile   = "status/pass_inactive/{$sessionkey}.ini";
+
+	if( $load_pass_in_authed && file_exists($authedfile) ){
+		$pass = parse_ini_file( $authedfile );
+		if( $pass != false ) return $pass;
+	}
+
+	if( !$load_pass_in_authed && file_exists($unauthedfile) ){
+		$pass = parse_ini_file( $unauthedfile );
+		if( $pass != false ) return $pass;
+	}
+
+	return null;
+}
+
+function validate_pass ($sessionkey) {
+	$unauthedfile = "status/pass_unauthed/{$sessionkey}.ini";
+	$authedfile   = "status/pass_inactive/{$sessionkey}.ini";
+	if( file_exists($authedfile) )    return false;
+	if( !file_exists($unauthedfile) ) return false;
+	if( !rename($unauthedfile, $authedfile) ) return false;
+	return true;
+}
+
+function pass_is_activated ($sessionkey) {
+	$authedfile = "status/pass_inactive/{$sessionkey}.ini";
+	$activefile = "status/pass/{$sessionkey}.ini";
+
+	if( file_exists($authedfile) ) return false;
+	if( file_exists($activefile) ) return true;
 	return false;
 }
 
-function accept_requests( &$acceptedlist_is_changed ) {
-	$dh = opendir( "status/pass_requested" );
+function activate_passes( &$acceptedlist_is_changed ) {
+	$dh = opendir( "status/pass_inactive" );
 	while( false !== ($entry = readdir($dh)) ){
 		if( !preg_match('/^[0-9a-f]+\.ini$/', $entry) ) continue;
-		$src = "status/pass_requested/".$entry;
+		$src = "status/pass_inactive/".$entry;
 		$dst = "status/pass/".$entry;
 		rename( $src, $dst );
 		$acceptedlist_is_changed = true;
@@ -289,18 +324,18 @@ function cleanup_is_directed() {
 	return $r;
 }
 
-function cleanup_requests( $setting, &$acceptedlist_is_changed ) {
+function cleanup_passes( $setting, &$acceptedlist_is_changed ) {
 	$dh = opendir( "status/pass" );
 	$time = time();
 	while( false !== ($entry = readdir($dh)) ){
 		if( !preg_match('/^[0-9a-f]+\.ini$/', $entry) ) continue;
-		$acceptedfile = parse_ini_file( "status/accepted/".$entry );
+		$acceptedfile = parse_ini_file( "status/pass/".$entry );
 
 		$timeout = $acceptedfile["creationtime"] + $setting["cron"]["lifetime_min_of_request"] * 60;
 		if( $time < $timeout ) continue;
 
-		$src = "status/accepted/".$entry;
-		$dst = "status/expired/".$entry;
+		$src = "status/pass/".$entry;
+		$dst = "status/pass_expired/".$entry;
 		rename( $src, $dst );
 		$acceptedlist_is_changed = true;
 	}
@@ -352,10 +387,10 @@ function store_acceptedlist( $acceptedlist ) {
 
 function maintain_passes ( $setting, $must_be_cleaned_up = true ) {
 	$acceptedlist_is_changed = false;
-	accept_requests( $acceptedlist_is_changed );
-	log_tty("accepted the new requests.");
+	activate_passes( $acceptedlist_is_changed );
+	log_tty("activated the new passes.");
 	if( $must_be_cleaned_up || cleanup_is_directed() ){
-	       	cleanup_requests( $setting, $acceptedlist_is_changed );
+	       	cleanup_passes( $setting, $acceptedlist_is_changed );
 		log_tty("cleanup the old requests.");
 	}
 	if( !$must_be_cleaned_up && !$acceptedlist_is_changed ) return;
@@ -394,18 +429,38 @@ function maintain_passes ( $setting, $must_be_cleaned_up = true ) {
 $loader = new \Twig\Loader\FilesystemLoader(__DIR__."/..");
 $twig   = new \Twig\Environment($loader);
 
-function send_mail_at_issuance ($setting, $mail, $username, $sessionkey) {
+function send_mail_at_account_issuance ($setting, $mail, $username, $sessionkey) {
 	global $twig;
-	$content = $twig->render( "conf/mail_at_issuance.tmpl", [
+	$content = $twig->render( "conf/mail_at_account_issuance.tmpl", [
 		"username"   => $username,
 		"sessionkey" => $sessionkey,
 		"now" => date("Y-m-d H:i:s"),
 		"base_url"                => $setting["web"]["base_url"],
 		"expiration_min_of_issue" => $setting["web"]["expiration_min_of_issue"],
 	] );
-	$header = parse_ini_file( "conf/mail_at_issuance.ini" );
+	$header = parse_ini_file( "conf/mail_at_account_issuance.ini" );
 	$header["From"]    ??= "System <admin@example.com>";
-	$header["Subject"] ??= "Subject>";
+	$header["Subject"] ??= "Subject";
+
+	$subject = $header["Subject"];
+	unset( $header["Subject"] );
+
+	mb_send_mail( $mail, $subject, $content, $header );
+	return true;
+}
+
+function send_mail_at_pass_issuance ($setting, $mail, $username, $sessionkey) {
+	global $twig;
+	$content = $twig->render( "conf/mail_at_pass_issuance.tmpl", [
+		"username"   => $username,
+		"sessionkey" => $sessionkey,
+		"now" => date("Y-m-d H:i:s"),
+		"base_url"                => $setting["web"]["base_url"],
+		"expiration_min_of_issue" => $setting["web"]["expiration_min_of_issue"],
+	] );
+	$header = parse_ini_file( "conf/mail_at_pass_issuance.ini" );
+	$header["From"]    ??= "System <admin@example.com>";
+	$header["Subject"] ??= "Subject";
 
 	$subject = $header["Subject"];
 	unset( $header["Subject"] );

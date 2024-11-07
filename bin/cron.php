@@ -22,10 +22,10 @@ try{
 	maintain_passes($setting, true);
 	standby_during_period_of_exec (
 		$setting,
-		function() use ($setting) { maintenance_requests($setting, false); }
+		function() use ($setting) { maintain_passes($setting, false); }
 	);
 	unlock_process($lock);
-	log_info("maintenance_requests: success.");
+	log_info("maintain_passes: success.");
 
 }catch(Exception $e) {
 	$message = $e->getMessage();

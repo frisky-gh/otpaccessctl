@@ -3,7 +3,7 @@
 // load libraries
 require("lib/common.php");
 
-$location = "signin_complete.php";
+$location = "signin.php?message=auth";
 
 try{
 	$setting = load_setting();
@@ -17,6 +17,7 @@ try{
 	log_info("validate_inputs: success.", ["username" => $username, "token" => $token]);
 
 	if     ( $setting["web"]["auth_method"] == "maildomain" ){
+		$mail = $username . "@" . $setting["maildomain"]["domain"];
 
 	}elseif( $setting["web"]["auth_method"] == "ldap" ){
 		$mail = auth_by_ldap($setting, $username, $password);
@@ -42,20 +43,26 @@ try{
 	$ipaddr = $_SERVER['REMOTE_ADDR'];
 
 	if     ( $setting["web"]["auth_method"] == "maildomain" ){
-		$r = store_request($username, $sessionkey, $ipaddr);
-		if( !$r ) throw new ErrorException("store_request");
-		log_info("store_request: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
+		$r = store_pass($sessionkey, $username, $ipaddr, false);
+		if( !$r ) throw new ErrorException("store_pass");
+		log_info("store_pass: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
+
+		$r = send_mail_at_pass_issuance( $setting, $mail, $username, $sessionkey );
+		if( !$r ) throw new ErrorException("send_mail_at_pass_issuance");
+		log_info("send_mail_at_pass_issuance: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
+
+		$location = "signin_complete.php";
 
 	}elseif( $setting["web"]["auth_method"] == "ldap" ){
-		$r = store_request($username, $sessionkey, $ipaddr);
-		if( !$r ) throw new ErrorException("store_request");
-		log_info("store_request: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
+		$r = store_pass($sessionkey, $username, $ipaddr, true);
+		if( !$r ) throw new ErrorException("store_pass");
+		log_info("store_pass: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
+		$location = "signin_complete.php?sessionkey={$sessionkey}";
 
 	}else{
 		throw new ErrorException("unknown_auth_method");
 	}
 
-	$location = "signin_complete.php?sessionkey={$sessionkey}";
 
 }catch(Exception $e) {
 	$message = $e->getMessage();

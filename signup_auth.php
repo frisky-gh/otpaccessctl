@@ -42,9 +42,9 @@ try{
 	if( !$r ) throw new ErrorException("store_account");
 	log_info("store_account: success.", ["username" => $username, "sessionkey" => $sessionkey]);
 
-	$r = send_mail_at_issuance( $setting, $mail, $username, $sessionkey );
-	if( !$r ) throw new ErrorException("send_mail_at_issuence");
-	log_info("send_mail_at_issuance: success.", ["username" => $username, "sessionkey" => $sessionkey, "mail" => $mail]);
+	$r = send_mail_at_account_issuance( $setting, $mail, $username, $sessionkey );
+	if( !$r ) throw new ErrorException("send_mail_at_account_issuance");
+	log_info("send_mail_at_account_issuance: success.", ["username" => $username, "sessionkey" => $sessionkey, "mail" => $mail]);
 
 	$location = "signup_complete.php";
 
