@@ -5,3 +5,9 @@ Require all denied
 <Files "*.php">
 	Require all granted
 </Files>
+## You can restrict signup operations.
+#<Files "signup*.php">
+#	Require ip xxx.xxx.xxx.xxx
+#	Require ip yyy.yyy.yyy.yyy ...
+#	Require all denied
+#</Files>
