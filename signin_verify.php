@@ -5,16 +5,26 @@ require("lib/common.php");
 
 try{
 	$setting = load_setting();
-	set_channel_of_log("signup_confirm");
+	set_channel_of_log("signin_complete");
 	log_info("load_setting: success.");
 
-	if( $_SERVER['REQUEST_METHOD']  == "HEAD" ) throw new ErrorException("access_from_bot");
-	if( $_SERVER['HTTP_USER_AGENT'] == "" )     throw new ErrorException("access_from_bot");
-
 	validate_inputs();
-	$username = $_GET["username"];
 	$sessionkey = $_GET["sessionkey"];
-	log_info("validate_inputs: success.", ["username" => $username, "sessionkey" => $sessionkey]);
+	log_info("validate_inputs: success.", ["sessionkey" => $sessionkey]);
+
+	if     ( $setting["web"]["auth_method"] == "maildomain" && $sessionkey == "" ){
+		// nothing to do
+
+	}elseif( $setting["web"]["auth_method"] == "maildomain" ){
+		$r = pass_is_activated( $sessionkey );
+		log_info("pass_is_activated: success.", ["r" => $r]);
+
+	}elseif( $setting["web"]["auth_method"] == "ldap" ){
+		$r = pass_is_activated( $sessionkey );
+		log_info("pass_is_activated: success.", ["r" => $r]);
+
+	}else{
+	}
 
 }catch(Exception $e) {
 	$message = $e->getMessage();
@@ -32,7 +42,7 @@ try{
 
 
         <!-- <title>Creative - Start Bootstrap Theme</title> -->
-        <title><?= $setting["web"]["app_name"] ?>: Confirm Your Request</title>
+        <title><?= $setting["web"]["app_name"] ?>: Verifying Your Account by Email</title>
 
 
         <!-- Favicon-->
@@ -62,18 +72,11 @@ try{
 
 	<section class="page-section bg-primary" id="services">
             <div class="container-fluid p-0">
-                <h2 class="text-center mt-0">Confirm Your Request</h2>
+                <h2 class="text-center mt-0">Verifying Your Account by Email...</h2>
                 <hr class="divider" />
                 <div class="row gx-4 gx-lg-5">
-                    <div class="col-lg-12 col-md-6 text-center pb-lg-5">
-			You have requested a new/renew gateway account. If you are sure, please click the button below.
-                    </div>
                     <div class="col-lg-12 col-md-6 text-center">
-			<form method="GET" action="signup_auth2nd.php">
-			    <input type="hidden" name="username" value="<?=$username?>">
-			    <input type="hidden" name="sessionkey" value="<?=$sessionkey?>">
-			    <input type="submit" name="submit" value="Confirm" class="btn btn-secondary btn-xl" >
-			</form">
+			Please receive our authentication mail, and follow the instructions in the mail.
                     </div>
                 </div>
             </div>
@@ -96,3 +99,4 @@ try{
         <script src="https://cdn.startbootstrap.com/sb-forms-latest.js"></script>
     </body>
 </html>
+

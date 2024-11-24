@@ -3,7 +3,7 @@
 // load libraries
 require("lib/common.php");
 
-$location = "signup_complete.php";
+$location = "signup_verify.php";
 
 try{
 	$setting = load_setting();
@@ -46,7 +46,7 @@ try{
 	if( !$r ) throw new ErrorException("send_mail_at_account_issuance");
 	log_info("send_mail_at_account_issuance: success.", ["username" => $username, "sessionkey" => $sessionkey, "mail" => $mail]);
 
-	$location = "signup_complete.php";
+	$location = "signup_verify.php";
 
 }catch(Exception $e) {
 	$message = $e->getMessage();

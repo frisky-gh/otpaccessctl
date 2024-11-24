@@ -12,6 +12,7 @@ try{
 	$acceptedlist = load_acceptedlist();
 	$apache_setting = "";
 	foreach( $acceptedlist as $i ){
+		if( $i == "" ) continue;
 		$apache_setting .= "	Require ip $i\n";
 	}
 	store_apache_setting( $apache_setting );

@@ -49,9 +49,9 @@ try{
 
 		$r = send_mail_at_pass_issuance( $setting, $mail, $username, $sessionkey );
 		if( !$r ) throw new ErrorException("send_mail_at_pass_issuance");
-		log_info("send_mail_at_pass_issuance: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
+		log_info("send_mail_at_pass_issuance: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr, "mail" => $mail]);
 
-		$location = "signin_complete.php";
+		$location = "signin_verify.php";
 
 	}elseif( $setting["web"]["auth_method"] == "ldap" ){
 		$r = store_pass($sessionkey, $username, $ipaddr, true);

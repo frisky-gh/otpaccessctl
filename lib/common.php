@@ -74,6 +74,7 @@ function load_setting() {
 	$setting["web"]["expiration_min_of_issue"] ??= 15;
 	$setting["web"]["auth_method"] ??= "maildomain";
 	$setting["web"]["app_name"]    ??= "OTPAccessCtl";
+	$setting["web"]["org_name"]    ??= "example.com";
 
 	return $setting;
 }
@@ -81,19 +82,21 @@ function load_setting() {
 function validate_inputs() {
 	$_GET["message"] ??= null;
 
-	if( !array_key_exists("username", $_GET)  ) $_GET["username"]  = null;
+	if( !array_key_exists("username", $_GET)  ) $_GET ["username"] = null;
 	else if( !preg_match('|^[-+.\w]{1,80}$|', $_GET ["username"]) )  $_GET ["username"] = null;
 	if( !array_key_exists("username", $_POST) ) $_POST["username"] = null;
-	else if( !preg_match('|^[-+.\w]{1,80}$|', $_POST ["username"]) ) $_POST ["username"] = null;
+	else if( !preg_match('|^[-+.\w]{1,80}$|', $_POST ["username"]) ) $_POST["username"] = null;
 
 	if( !array_key_exists("password", $_POST) ) $_POST["password"] = null;
-	else if( !preg_match('|^[\x20-\x7e]{1,80}$|', $_POST ["password"]) ) $_POST ["password"] = null;
+	else if( !preg_match('|^[\x20-\x7e]{1,80}$|', $_POST ["password"]) ) $_POST["password"] = null;
 
+	if( !array_key_exists("sessionkey", $_GET)  ) $_GET ["sessionkey"] = null;
+	else if( !preg_match('|^[0-9a-fA-F]{1,256}$|', $_GET ["sessionkey"]) ) $_GET ["sessionkey"] = null;
 	if( !array_key_exists("sessionkey", $_POST) ) $_POST["sessionkey"] = null;
-	else if( !preg_match('|^[0-9a-fA-F]{1,256}$|', $_POST ["sessionkey"]) ) $_POST ["sessionkey"] = null;
+	else if( !preg_match('|^[0-9a-fA-F]{1,256}$|', $_POST["sessionkey"]) ) $_POST["sessionkey"] = null;
 
 	if( !array_key_exists("token", $_POST) ) $_POST["token"] = null;
-	else if( !preg_match('|^\d{1,16}$|', $_POST ["token"]) ) $_POST ["token"] = null;
+	else if( !preg_match('|^\d{1,16}$|', $_POST["token"]) ) $_POST["token"] = null;
 
 	return true;
 }
