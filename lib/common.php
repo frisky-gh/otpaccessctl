@@ -62,11 +62,11 @@ function load_setting() {
 	// cron section
 	$setting["cron"] ??= [];
 	$setting["cron"]["period"] ??= [];
-	$setting["cron"]["interval_sec_of_maintenance"] ??= 10;
-	$setting["cron"]["period_min_of_execution"]     ??= 1;
-	$setting["cron"]["lifetime_min_of_request"]     ??= 60;
-	$setting["cron"]["write_command"]               ??= "bin/write_apache_setting.php";
-	$setting["cron"]["reload_command"]              ??= "";
+	$setting["cron"]["interval_sec_of_acceptance"]   ??= 10;
+	$setting["cron"]["interval_min_of_exec_by_cron"] ??= 1;
+	$setting["cron"]["lifetime_min_of_pass"]         ??= 60;
+	$setting["cron"]["write_command"]                ??= "bin/write_apache_setting.php";
+	$setting["cron"]["reload_command"]               ??= "";
 
 	// web section
 	$setting["web"]["base_url"] ??= "https://example.com/otpaccessctl/";
@@ -334,7 +334,7 @@ function cleanup_passes( $setting, &$acceptedlist_is_changed ) {
 		if( !preg_match('/^[0-9a-f]+\.ini$/', $entry) ) continue;
 		$acceptedfile = parse_ini_file( "status/pass/".$entry );
 
-		$timeout = $acceptedfile["creationtime"] + $setting["cron"]["lifetime_min_of_request"] * 60;
+		$timeout = $acceptedfile["creationtime"] + $setting["cron"]["lifetime_min_of_pass"] * 60;
 		if( $time < $timeout ) continue;
 
 		$src = "status/pass/".$entry;

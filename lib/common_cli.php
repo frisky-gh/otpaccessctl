@@ -45,14 +45,14 @@ function unlock_process( &$lock ) {
 
 
 //// functions about standby
-function standby_during_period_of_exec ( $setting, $maintenance ){
-	$interval_sec = $setting["cron"]["interval_sec_of_maintenance"];
-	$standby_endtime = time() + $setting["cron"]["period_min_of_execution"] * 60 - $interval_sec;
+function standby_during_period_of_exec ( $setting, $acceptance_func ){
+	$interval_sec = $setting["cron"]["interval_sec_of_acceptance"];
+	$standby_endtime = time() + $setting["cron"]["interval_min_of_exec_by_cron"] * 60 - $interval_sec;
 
 	log_tty("standby started.");
 	while( time() < $standby_endtime ){
 		sleep($interval_sec);
-		$maintenance();
+		$acceptance_func();
 	}
 	log_tty("standby ended.");
 }

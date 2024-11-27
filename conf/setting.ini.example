@@ -12,9 +12,9 @@ digits=6
 period=30
 
 [cron]
-interval_sec_of_maintenance=10
-period_min_of_execution=5
-lifetime_min_of_request=720
+interval_sec_of_acceptance=10
+interval_min_of_exec_by_cron=5
+lifetime_min_of_pass=720
 write_command="bin/write_apache_setting.php"
 reload_command="bin/reload_apache2.php"
 
