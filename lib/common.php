@@ -71,7 +71,7 @@ function load_setting() {
 	// web section
 	$setting["web"]["base_url"] ??= "https://example.com/otpaccessctl/";
 	$setting["web"]["base_url"] = preg_replace('|/$|', '', $setting["web"]["base_url"] );
-	$setting["web"]["expiration_min_of_issue"] ??= 15;
+	$setting["web"]["expiration_min_of_issuance"] ??= 15;
 	$setting["web"]["auth_method"] ??= "maildomain";
 	$setting["web"]["app_name"]    ??= "OTPAccessCtl";
 	$setting["web"]["org_name"]    ??= "example.com";
@@ -271,17 +271,23 @@ function store_pass ($sessionkey, $username, $ipaddr, $store_pass_as_authed) {
 	return true;
 }
 
-function load_pass ($sessionkey, $load_pass_in_authed) {
-	$unauthedfile = "status/pass_unauthed/{$sessionkey}.ini";
-	$authedfile   = "status/pass_inactive/{$sessionkey}.ini";
+function load_pass ($sessionkey, $load_pass_in_authed, $load_pass_activated = false) {
+	$unauthedfile  = "status/pass_unauthed/{$sessionkey}.ini";
+	$authedfile    = "status/pass_inactive/{$sessionkey}.ini";
+	$activatedfile = "status/pass/{$sessionkey}.ini";
 
-	if( $load_pass_in_authed && file_exists($authedfile) ){
+	if( !$load_pass_activated && $load_pass_in_authed  && file_exists($authedfile) ){
 		$pass = parse_ini_file( $authedfile );
 		if( $pass != false ) return $pass;
 	}
 
-	if( !$load_pass_in_authed && file_exists($unauthedfile) ){
+	if( !$load_pass_activated && !$load_pass_in_authed && file_exists($unauthedfile) ){
 		$pass = parse_ini_file( $unauthedfile );
+		if( $pass != false ) return $pass;
+	}
+
+	if( $load_pass_activated  && $load_pass_in_authed  && file_exists($activatedfile) ){
+		$pass = parse_ini_file( $activatedfile );
 		if( $pass != false ) return $pass;
 	}
 
@@ -309,11 +315,22 @@ function pass_is_activated ($sessionkey) {
 function activate_passes( &$acceptedlist_is_changed ) {
 	$dh = opendir( "status/pass_inactive" );
 	while( false !== ($entry = readdir($dh)) ){
-		if( !preg_match('/^[0-9a-f]+\.ini$/', $entry) ) continue;
+		$matches = null;
+		if( !preg_match('/^([0-9a-f]+)\.ini$/', $entry, $matches) ) continue;
 		$src = "status/pass_inactive/".$entry;
 		$dst = "status/pass/".$entry;
 		rename( $src, $dst );
 		$acceptedlist_is_changed = true;
+
+		if( $matches == null || $matches[1] == null ) continue;
+		$sessionkey = $matches[1];
+		$pass = load_pass ($sessionkey, true, true);
+		if( $pass == null ) continue;
+
+		$ipaddr = $pass["ipaddr"];
+		$username = $pass["username"];
+		log_info("accepte new pass, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
+		log_tty ("accepte new pass, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
 	}
 	return true;
 }
@@ -388,45 +405,6 @@ function store_acceptedlist( $acceptedlist ) {
 	file_put_contents("status/acceptedlist", $acceptedlist_concat);
 }
 
-function maintain_passes ( $setting, $must_be_cleaned_up = true ) {
-	$acceptedlist_is_changed = false;
-	activate_passes( $acceptedlist_is_changed );
-	log_tty("activated the new passes.");
-	if( $must_be_cleaned_up || cleanup_is_directed() ){
-	       	cleanup_passes( $setting, $acceptedlist_is_changed );
-		log_tty("cleanup the old requests.");
-	}
-	if( !$must_be_cleaned_up && !$acceptedlist_is_changed ) return;
-
-	$acceptedlist      = generate_acceptedlist();
-	$last_acceptedlist = load_acceptedlist();
-	if( !two_acceptedlists_are_diffent($acceptedlist, $last_acceptedlist) ) return;
-
-	log_info("the accepted list should be updated.");
-	log_tty("the accepted list should be updated.");
-	store_acceptedlist( $acceptedlist );
-
-	$write_command  = $setting["cron"]["write_command"];
-	$reload_command = $setting["cron"]["reload_command"];
-	if( $write_command != "" ){
-		log_tty( "write_command: {$write_command}" );
-		$output = system( "{$write_command}", $result );
-		log_tty("write_command: output={$output}, result={$result}");
-		log_info( "write_command: {$write_command}" );
-		if( $result != 0 ) return ;
-	}
-	if( $reload_command != "" ){
-		log_tty( "reload_command: {$reload_command}" );
-		$output = system( "{$reload_command}", $result );
-		log_tty("reload_command: output={$output}, result={$result}");
-		log_info("reload_command: output={$output}, result={$result}");
-		if( $result != 0 ) return ;
-	}
-
-	log_info("done.");
-	log_tty("done.");
-}
-
 
 //// functions about mail
 $loader = new \Twig\Loader\FilesystemLoader(__DIR__."/..");
@@ -438,8 +416,8 @@ function send_mail_at_account_issuance ($setting, $mail, $username, $sessionkey)
 		"username"   => $username,
 		"sessionkey" => $sessionkey,
 		"now" => date("Y-m-d H:i:s"),
-		"base_url"                => $setting["web"]["base_url"],
-		"expiration_min_of_issue" => $setting["web"]["expiration_min_of_issue"],
+		"base_url"                   => $setting["web"]["base_url"],
+		"expiration_min_of_issuance" => $setting["web"]["expiration_min_of_issuance"],
 	] );
 	$header = parse_ini_file( "conf/mail_at_account_issuance.ini" );
 	$header["From"]    ??= "System <admin@example.com>";
@@ -458,8 +436,8 @@ function send_mail_at_pass_issuance ($setting, $mail, $username, $sessionkey) {
 		"username"   => $username,
 		"sessionkey" => $sessionkey,
 		"now" => date("Y-m-d H:i:s"),
-		"base_url"                => $setting["web"]["base_url"],
-		"expiration_min_of_issue" => $setting["web"]["expiration_min_of_issue"],
+		"base_url"                   => $setting["web"]["base_url"],
+		"expiration_min_of_issuance" => $setting["web"]["expiration_min_of_issuance"],
 	] );
 	$header = parse_ini_file( "conf/mail_at_pass_issuance.ini" );
 	$header["From"]    ??= "System <admin@example.com>";

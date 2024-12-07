@@ -19,10 +19,10 @@ try{
 		exit(2);
 	}
 
-	maintain_passes($setting, true);
+	activate_and_cleanup_passes($setting, true);
 	standby_during_period_of_exec (
 		$setting,
-		function() use ($setting) { maintain_passes($setting, false); }
+		function() use ($setting) { activate_and_cleanup_passes($setting, false); }
 	);
 	unlock_process($lock);
 	log_info("maintain_passes: success.");
