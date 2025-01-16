@@ -25,7 +25,7 @@ try{
 		function() use ($setting) { activate_and_cleanup_passes($setting, false); }
 	);
 	unlock_process($lock);
-	log_info("maintain_passes: success.");
+	log_info("activate_and_cleanup_passes: success.");
 
 }catch(Exception $e) {
 	$message = $e->getMessage();

@@ -24,7 +24,7 @@ try{
 	if( $acct_sessionkey != $sessionkey ) throw new ErrorException("session_keys_are_mismatched");
 
 	$now = time();
-	$expiration_limit = $acct["creationtime"] + $setting["web"]["expiration_min_of_issue"] * 60;
+	$expiration_limit = $acct["creationtime"] + $setting["web"]["expiration_min_of_issuance"] * 60;
 	if( $now > $expiration_limit ) throw new ErrorException("issue_is_expired");
 
 	$r = validate_account($username);

@@ -71,8 +71,8 @@ function activate_and_cleanup_passes ( $setting, $must_be_cleaned_up = true ) {
 	$last_acceptedlist = load_acceptedlist();
 	if( !two_acceptedlists_are_diffent($acceptedlist, $last_acceptedlist) ) return;
 
-	log_info("the accepted list should be updated.");
 	log_tty("the accepted list should be updated.");
+	log_info("the accepted list should be updated.");
 	store_acceptedlist( $acceptedlist );
 
 	$write_command  = $setting["cron"]["write_command"];
@@ -81,7 +81,7 @@ function activate_and_cleanup_passes ( $setting, $must_be_cleaned_up = true ) {
 		log_tty( "write_command: {$write_command}" );
 		$output = system( "{$write_command}", $result );
 		log_tty("write_command: output={$output}, result={$result}");
-		log_info( "write_command: {$write_command}" );
+		log_info("write_command: output={$output}, result={$result}");
 		if( $result != 0 ) return ;
 	}
 	if( $reload_command != "" ){

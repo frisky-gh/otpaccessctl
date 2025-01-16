@@ -13,6 +13,7 @@ try{
 	validate_inputs();
 	$username = $_POST["username"];
 	$password = $_POST["password"];
+	if( empty($username) ) throw new ErrorException("empty_username");
 	log_info("validate_inputs: success.", ["username" => $username]);
 
 	if     ( $setting["web"]["auth_method"] == "maildomain" ){ 
@@ -20,7 +21,8 @@ try{
 
 	}elseif( $setting["web"]["auth_method"] == "ldap" ){ 
 		$mail = auth_by_ldap($setting, $username, $password);
-		if( !$mail ) throw new ErrorException("auth_by_ldap");
+		if( !$mail )           throw new ErrorException("auth_by_ldap");
+		if( empty($password) ) throw new ErrorException("empty_password");
 		log_info("auth_by_ldap: success.", ["username" => $username, "mail" => $mail]);
 
 	}else{ 
