@@ -56,4 +56,19 @@ window.addEventListener('DOMContentLoaded', event => {
         elements: '#portfolio a.portfolio-box'
     });
 
+    // If "message" exists
+    const params = new URLSearchParams( window.location.search );
+    const message = params.get( 'message' );
+    const message_regexp = /^\w+$/;
+    if( message_regexp.test(message) ){
+        let e = document.getElementById( 'dialog-' + message );
+        if(!e){
+	    e = document.getElementById( 'dialog-other' );
+	}
+        if(e){
+	    e.style.display = 'block';
+	    setTimeout( () => { e.style.display = 'none'; }, 9000);
+        }
+    }
 });
+

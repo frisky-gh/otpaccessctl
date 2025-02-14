@@ -21,7 +21,7 @@ try{
 
 	}elseif( $setting["web"]["auth_method"] == "ldap" ){ 
 		$mail = auth_by_ldap($setting, $username, $password);
-		if( !$mail )           throw new ErrorException("auth_by_ldap");
+		if( !$mail )           throw new ErrorException("unmatch_username_or_password");
 		if( empty($password) ) throw new ErrorException("empty_password");
 		log_info("auth_by_ldap: success.", ["username" => $username, "mail" => $mail]);
 
@@ -37,15 +37,15 @@ try{
 	$totpsecret = generate_totpsecret();
 	$sessionkey = generate_sessionkey();
 	$r = remove_account( $username );
-	if( !$r ) throw new ErrorException("remove_account");
+	if( !$r ) throw new ErrorException("error_in_remove_account");
 	log_info("remove_account: success.", ["username" => $username]);
 
 	$r = store_account( $username, $totpsecret, $sessionkey );
-	if( !$r ) throw new ErrorException("store_account");
+	if( !$r ) throw new ErrorException("error_in_store_account");
 	log_info("store_account: success.", ["username" => $username, "sessionkey" => $sessionkey]);
 
 	$r = send_mail_at_account_issuance( $setting, $mail, $username, $sessionkey );
-	if( !$r ) throw new ErrorException("send_mail_at_account_issuance");
+	if( !$r ) throw new ErrorException("error_in_send_mail_at_account_issuance");
 	log_info("send_mail_at_account_issuance: success.", ["username" => $username, "sessionkey" => $sessionkey, "mail" => $mail]);
 
 	$location = "signup_verify.php";

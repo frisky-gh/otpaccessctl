@@ -5,12 +5,13 @@ require("lib/common.php");
 
 try{
 	$setting = load_setting();
-	set_channel_of_log("signin_complete");
+	set_channel_of_log("signin_verify");
 	log_info("load_setting: success.");
 
 	validate_inputs();
 	$sessionkey = $_GET["sessionkey"];
-	log_info("validate_inputs: success.", ["sessionkey" => $sessionkey]);
+	$ipaddr = $_GET["ipaddr"];
+	log_info("validate_inputs: success.", ["sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
 
 	if     ( $setting["web"]["auth_method"] == "maildomain" && $sessionkey == "" ){
 		// nothing to do
@@ -76,6 +77,7 @@ try{
                 <hr class="divider" />
                 <div class="row gx-4 gx-lg-5">
                     <div class="col-lg-12 col-md-6 text-center">
+			This gateway is currently in the process of issuing a pass for your IP address (<?= $ipaddr ?>).<br>
 			Please receive our authentication mail, and follow the instructions in the mail.
                     </div>
                 </div>

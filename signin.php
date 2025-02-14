@@ -51,6 +51,7 @@ try{
                 <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="navbar-nav ms-auto my-2 my-lg-0">
+                        <li class="nav-item"><a class="nav-link" href="show.php">Show status</a></li>
                         <li class="nav-item"><a class="nav-link" href="#signin">Sign in</a></li>
                         <li class="nav-item"><a class="nav-link" href="#signup">Sign up</a></li>
                     </ul>
@@ -89,6 +90,20 @@ try{
 	              </div>
 
 	              <input type="submit" id="submit" value="Issue the site pass (sign in)" class="btn btn-primary btn-xl" >
+
+                      <div class="col-lg-10 align-self-baseline dialog" id="dialog-empty_username">
+                        Username is empty.
+	              </div>
+                      <div class="col-lg-10 align-self-baseline dialog" id="dialog-empty_token">
+                        OTP token is empty.
+	              </div>
+                      <div class="col-lg-10 align-self-baseline dialog" id="dialog-unmatch_username_or_token">
+                        Username or OTP token is incorrect.
+	              </div>
+                      <div class="col-lg-10 align-self-baseline dialog" id="dialog-other">
+		      Error <?= $message ?> occured.
+	              </div>
+
 	            </form>
 		    <!-- END -->
 

@@ -98,6 +98,10 @@ function validate_inputs() {
 	if( !array_key_exists("token", $_POST) ) $_POST["token"] = null;
 	else if( !preg_match('|^\d{1,16}$|', $_POST["token"]) ) $_POST["token"] = null;
 
+	if( !array_key_exists("ipaddr", $_GET)  ) $_GET ["ipaddr"] = null;
+	else if( !preg_match('|^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|', $_GET ["ipaddr"]) ) $_GET ["ipaddr"] = null;
+	if( !array_key_exists("ipaddr", $_POST)  ) $_POST["ipaddr"] = null;
+	else if( !preg_match('|^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|', $_POST["ipaddr"]) ) $_POST["ipaddr"] = null;
 	return true;
 }
 

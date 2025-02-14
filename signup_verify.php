@@ -5,7 +5,7 @@ require("lib/common.php");
 
 try{
 	$setting = load_setting();
-	set_channel_of_log("signup_complete");
+	set_channel_of_log("signup_verify");
 	log_info("load_setting: success.");
 
 	validate_inputs();

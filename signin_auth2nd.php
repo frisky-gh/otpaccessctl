@@ -18,11 +18,11 @@ try{
 	log_info("validate_inputs: success.", ["sessionkey" => $sessionkey]);
 
 	$pass = load_pass($sessionkey, false);
-	if( !$pass ) throw new ErrorException("load_pass");
+	if( !$pass ) throw new ErrorException("error_in_load_pass");
 	log_info("load_pass: success.", ["sessionkey" => $sessionkey, "pass" => $pass]);
 
 	$r = validate_pass($sessionkey);
-	if( !$r ) throw new ErrorException("validate_pass");
+	if( !$r ) throw new ErrorException("error_in_validate_pass");
 	log_info("validate_pass: success.", ["sessionkey" => $sessionkey]);
 
 	$location = "signin_complete.php?sessionkey={$sessionkey}";

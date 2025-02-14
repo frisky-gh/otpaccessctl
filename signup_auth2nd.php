@@ -17,18 +17,18 @@ try{
 	log_info("validate_inputs: success.", ["username" => $username, "sessionkey" => $sessionkey]);
 
 	$acct = load_account($username, false, true);
-	if( !$acct ) throw new ErrorException("load_account");
+	if( !$acct ) throw new ErrorException("error_in_load_account");
 	log_info("load_account: success.", ["username" => $username, "acct" => $acct]);
 
 	$acct_sessionkey = $acct["sessionkey"];
-	if( $acct_sessionkey != $sessionkey ) throw new ErrorException("session_keys_are_mismatched");
+	if( $acct_sessionkey != $sessionkey ) throw new ErrorException("unmatch_session_key");
 
 	$now = time();
 	$expiration_limit = $acct["creationtime"] + $setting["web"]["expiration_min_of_issuance"] * 60;
-	if( $now > $expiration_limit ) throw new ErrorException("issue_is_expired");
+	if( $now > $expiration_limit ) throw new ErrorException("expired_issuance");
 
 	$r = validate_account($username);
-	if( !$r ) throw new ErrorException("validate_account");
+	if( !$r ) throw new ErrorException("error_in_validate_account");
 	log_info("validate_acccount: success.", ["username" => $username]);
 
 	$url = generate_otpauth_url($username, $setting, $acct);
