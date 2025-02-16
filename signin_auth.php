@@ -20,7 +20,6 @@ try{
 
 	if     ( $setting["web"]["auth_method"] == "maildomain" ){
 		$mail = $username . "@" . $setting["maildomain"]["domain"];
-		if( in_array($username, array("hyutaka", "iryogen", "fnaoto", "tsasajima2") ) ) $mail = $username . "@lenovo.com";
 
 	}elseif( $setting["web"]["auth_method"] == "ldap" ){
 		$mail = auth_by_ldap($setting, $username, $password);
