@@ -75,6 +75,7 @@ function load_setting() {
 	$setting["web"]["auth_method"] ??= "maildomain";
 	$setting["web"]["app_name"]    ??= "OTPAccessCtl";
 	$setting["web"]["org_name"]    ??= "example.com";
+	$setting["web"]["lang"]        ??= "en";
 
 	return $setting;
 }
@@ -453,5 +454,33 @@ function send_mail_at_pass_issuance ($setting, $mail, $username, $sessionkey) {
 	mb_send_mail( $mail, $subject, $content, $header );
 	return true;
 }
+
+
+// functions about i18n
+$messagecatalog = [];
+function load_messagecatalog ($app, $lang) {
+	global $messagecatalog;
+	$f = file_get_contents( __DIR__."/../messagecatalogs/${app}.${lang}.json" );
+	if( is_null($f) ){
+		$messagecatalog = [];
+		return;
+	}
+	$j = json_decode($f, true);
+	if (json_last_error() !== JSON_ERROR_NONE) {
+		$e = json_last_error_msg();
+		log_info("load_messagecatalog: ${app}.${lang}: ${e}" );
+		$messagecatalog = [];
+		return;
+	}
+	$messagecatalog = $j;
+}
+
+function __ ($text, ...$args) {
+	global $messagecatalog;
+	if( array_key_exists($text, $messagecatalog) ) $t = $messagecatalog[$text];
+	else $t = $text;
+	return sprintf($t, ...$args);
+}
+
 
 

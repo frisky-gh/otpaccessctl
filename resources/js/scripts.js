@@ -60,7 +60,7 @@ window.addEventListener('DOMContentLoaded', event => {
     const params = new URLSearchParams( window.location.search );
     const message = params.get( 'message' );
     const message_regexp = /^\w+$/;
-    if( message_regexp.test(message) ){
+    if( message != null && message_regexp.test(message) ){
         let e = document.getElementById( 'dialog-' + message );
         if(!e){
 	    e = document.getElementById( 'dialog-other' );

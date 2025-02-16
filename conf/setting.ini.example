@@ -24,5 +24,6 @@ expiration_min_of_issuance = 15
 
 ; app_name = OTPAccessCtl
 ; org_name = example.com
+; lang = en
 
 
