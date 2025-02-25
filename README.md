@@ -34,7 +34,9 @@
 
 ## Flow of Pass
 
- --[authentication]--> pass unauthenticated --[authentication 2nd]--> pass inactive --[activation]--> pass active
+ --[OTP authentication]--> pass unauthenticated --[authentication 2nd]--> pass inactive --[activation]--> pass active
 
- --[MFA authentication]---------------------------------------------> pass inactive --[activation]--> pass active
+ --[MFA authentication]-------------------------------------------------> pass inactive --[activation]--> pass active
+
+
 
