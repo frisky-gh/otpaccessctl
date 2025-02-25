@@ -65,7 +65,7 @@
 	              <?php } ?>
 
 	              <div class="form-floating mb-3">
-	                <input class="form-control" name="token" id="token" type="text" placeholder="123456" data-sb-validations="required" />
+	                <input class="form-control" name="token" id="token" inputmode="numeric" pattern="[0-9]{6,}" type="text" autocomplete="one-time-code" placeholder="123456" data-sb-validations="required" />
 	                <label for="name">OTP token</label>
 	              </div>
 

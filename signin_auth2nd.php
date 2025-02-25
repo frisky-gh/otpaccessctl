@@ -7,7 +7,7 @@ $location = "signin.php?message=auth2nd";
 
 try{
 	$setting = load_setting();
-	set_channel_of_log("auth2nd");
+	set_channel_of_log("signin_auth2nd");
 	log_info("load_setting: success.");
 
 	if( $_SERVER['REQUEST_METHOD']  == "HEAD" ) throw new ErrorException("access_from_bot");

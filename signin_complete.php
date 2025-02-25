@@ -18,7 +18,7 @@ try{
 
 	}elseif( $setting["web"]["auth_method"] == "maildomain" ){
 		$r = pass_is_activated( $sessionkey );
-		log_info("pass_is_activated: success.", ["r" => $r]);
+		log_info("pass_is_activated: success.", ["r" => $r, "sessionkey" => $sessionkey]);
 
 	}elseif( $setting["web"]["auth_method"] == "ldap" ){
 		$r = pass_is_activated( $sessionkey );
@@ -31,6 +31,8 @@ try{
 }catch(Exception $e) {
 	$message = $e->getMessage();
 	log_info("exception: catch.", ["message" => $message]);
+	header("Location: resources/forbidden.html");
+	exit(0);
 } finally {
 }
 

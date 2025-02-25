@@ -20,6 +20,8 @@ try{
 }catch(Exception $e) {
 	$message = $e->getMessage();
 	log_info("exception: catch.", ["message" => $message]);
+	header("Location: resources/forbidden.html");
+	exit(0);
 } finally {
 }
 
