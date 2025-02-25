@@ -1,0 +1,34 @@
+{
+	"Issue the site pass (Sign in)" : "通行証を発行する(Sign in)",
+	"Issue Your Account (Sign up)" : "アカウントを登録する(Sign up)",
+	"Verifying Your Account by Email..."
+	: "アカウントの妥当性検証",
+	"This gateway is currently in the process of issuing a pass for your IP address (%s)."
+	: "お使いのIPアドレス(%s)に対して通行証を発行するため、あなたのアカウントの妥当性を検証しています。", 
+	"Please receive our authentication mail, and follow the instructions in the mail."
+	: "認証メールを送信しましたので、記載内容に従ってください。",
+	"Confirm Your Request"
+	: "手続きの妥当性検証",
+	"You have requested your site pass."
+	: "通行証発行の手続き中です。",
+	"If you are sure, please click the button below."
+	: "通行証発行を依頼した認識があれば、下のボタンをクリックしてください。<br>もしなければあなたのアカウントを第三者が利用しようとしている可能性がありますのでボタンを押さずに管理者にご相談下さい。",
+	"You have requested a new/renew gateway account."
+	: "アカウント登録/再登録の手続き中です。",
+	"If you are sure, please click the button below."
+	: "アカウント登録/再登録を依頼した認識があれば、下のボタンをクリックしてください。<br>もしなければあなたのアカウントを第三者が利用しようとしている可能性がありますのでボタンを押さずに管理者にご相談下さい。",
+	"Issued Your Account"
+	: "アカウント登録完了",
+	"Hi %s-san,"
+	: "%s さん",
+	"Please scan the QR code bellow with Google Authenticator or similar app."
+	: "アカウント登録が完了しました。<br>Google Authenticatorなどのアプリで下のQRコードを読み取り、あなたのアカウントをアプリに記憶させてください。",
+	"Waiting..."
+	: "お待ちください...",
+	"Accepted!"
+	: "発行完了",
+	"Waiting the site pass to access now..."
+	: "通行証発行までもう少しお待ちください...",
+	"Your site pass has been issued!"
+	: "通行証が発行されました。"
+}
