@@ -21,7 +21,7 @@ try{
 	$job_label = "# otpaccessctl job\n";
 	$job_label_index = null;
 
-	$job2 = "cd {$wd} ; bin/cleanup.sh";
+	$job2 = "cd {$wd} ; bin/cleanup.sh ; bin/stat_daily.sh";
 	$job2_crontab = "09 00 * * * {$job2}\n";
 	$job2_label = "# otpaccessctl cleanup\n";
 	$job2_label_index = null;
