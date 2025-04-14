@@ -70,5 +70,17 @@ window.addEventListener('DOMContentLoaded', event => {
 	    setTimeout( () => { e.style.display = 'none'; }, 9000);
         }
     }
+
+    const language_selector = document.getElementById("language_selector");
+    if( language_selector ){
+	language_selector.addEventListener( 'change', function() {
+	    const selected_value = this.value;
+	    const dir = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')+1 );
+	    // alert(`selected language has changed! ${selected_value}, ${dir}`);
+	    document.cookie = `lang=${selected_value}; path=${dir}`;
+	    location.reload(true);
+	} );
+    }
+
 });
 

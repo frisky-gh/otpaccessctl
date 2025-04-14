@@ -76,11 +76,46 @@ function load_setting() {
 	$setting["web"]["app_name"]    ??= "OTPAccessCtl";
 	$setting["web"]["org_name"]    ??= "example.com";
 	$setting["web"]["lang"]        ??= "en";
+	$setting["web"]["default_lang"] ??= "en";
+	$setting["web"]["lang_list"] = preg_split( "/,/", $setting["web"]["lang_list"] ?? "en,ja" );
 
 	return $setting;
 }
 
+function validate_input($name, $regexp, $value_in_get = true, $value_in_post = false, $value_in_cookie = false) {
+	$ok = true;
+	if( $value_in_get ){
+		if( !array_key_exists($name, $_GET)    ){
+			$_GET   [$name] = null;
+			$ok = false;
+		}else if( !preg_match($regexp, $_GET   [$name]) ){
+			$_GET   [$name] = null;
+			$ok = false;
+		}
+	}
+	if( $value_in_post ){
+		if( !array_key_exists($name, $_POST)   ){
+			$_POST  [$name] = null;
+			$ok = false;
+		}else if( !preg_match($regexp, $_POST  [$name]) ){
+			$_POST  [$name] = null;
+			$ok = false;
+		}
+	}
+	if( $value_in_cookie ){
+		if( !array_key_exists($name, $_COOKIE) ){
+			$_COOKIE[$name] = null;
+			$ok = false;
+		}else if( !preg_match($regexp, $_COOKIE[$name]) ){
+			$_COOKIE[$name] = null;
+			$ok = false;
+		}
+	}
+	return $ok;
+}
+
 function validate_inputs() {
+	$ok = true;
 	$_GET["message"] ??= null;
 
 	if( !array_key_exists("username", $_GET)  ) $_GET ["username"] = null;
@@ -103,7 +138,10 @@ function validate_inputs() {
 	else if( !preg_match('|^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|', $_GET ["ipaddr"]) ) $_GET ["ipaddr"] = null;
 	if( !array_key_exists("ipaddr", $_POST)  ) $_POST["ipaddr"] = null;
 	else if( !preg_match('|^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|', $_POST["ipaddr"]) ) $_POST["ipaddr"] = null;
-	return true;
+
+	if( !validate_input("lang", "|^\w+$|", true, false, true) ) $ok = false;
+
+	return $ok;
 }
 
 //// functions about LDAP
@@ -482,5 +520,18 @@ function __ ($text, ...$args) {
 	return sprintf($t, ...$args);
 }
 
+function generate_language_selector ( $curr_lang, $lang_list ) {
+	$lang_list_for_display = array( $curr_lang );
+	foreach( $lang_list as $l ){
+		if( $l == $curr_lang ) continue;
+		array_push( $lang_list_for_display, $l );
+	}
+	$html  = "<select id=\"language_selector\" name=\"lang\">";
+	foreach( $lang_list_for_display as $l ){
+		$html .= "<option value=\"$l\">$l</option>";
+	}
+	$html .= "</select>";
+	return $html;
+}
 
 
