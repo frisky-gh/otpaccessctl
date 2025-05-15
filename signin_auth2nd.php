@@ -21,6 +21,10 @@ try{
 	if( !$pass ) throw new ErrorException("error_in_load_pass");
 	log_info("load_pass: success.", ["sessionkey" => $sessionkey, "pass" => $pass]);
 
+	$now = time();
+	$expiration_limit = $pass["creationtime"] + $setting["web"]["expiration_min_of_issuance"] * 60;
+	if( $now > $expiration_limit ) throw new ErrorException("expired_issuance");
+
 	$r = validate_pass($sessionkey);
 	if( !$r ) throw new ErrorException("error_in_validate_pass");
 	log_info("validate_pass: success.", ["sessionkey" => $sessionkey]);
