@@ -67,6 +67,7 @@ function load_setting() {
 	$setting["cron"]["lifetime_min_of_pass"]         ??= 60;
 	$setting["cron"]["write_command"]                ??= "bin/write_apache_setting.php";
 	$setting["cron"]["reload_command"]               ??= "";
+	$setting["cron"]["num_of_pass_holding_capacity"] ??= 10;
 
 	// web section
 	$setting["web"]["base_url"] ??= "https://example.com/otpaccessctl/";
@@ -388,21 +389,49 @@ function cleanup_is_directed() {
 }
 
 function cleanup_passes( $setting, &$acceptedlist_is_changed ) {
+	$passes_held_by_user = [];
 	$dh = opendir( "status/pass" );
 	$time = time();
 	while( false !== ($entry = readdir($dh)) ){
 		if( !preg_match('/^[0-9a-f]+\.ini$/', $entry) ) continue;
 		$acceptedfile = parse_ini_file( "status/pass/".$entry );
 
+		$username = $acceptedfile["username"];
 		$timeout = $acceptedfile["creationtime"] + $setting["cron"]["lifetime_min_of_pass"] * 60;
-		if( $time < $timeout ) continue;
+		if( $time >= $timeout ){
+			$src = "status/pass/".$entry;
+			$dst = "status/pass_expired/".$entry;
+			rename( $src, $dst );
+			log_info("expire old pass, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
+			log_tty ("expire old pass, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
+			$acceptedlist_is_changed = true;
+			continue;
+		}
 
-		$src = "status/pass/".$entry;
-		$dst = "status/pass_expired/".$entry;
-		rename( $src, $dst );
-		$acceptedlist_is_changed = true;
+		if( array_key_exists($username, $passes_held_by_user) ){
+			array_push( $passes_held_by_user[$username], $acceptedfile );
+		}else{
+			$passes_held_by_user[$username] = [ $acceptedfile ];
+		}
 	}
 	closedir( $dh );
+
+	$capacity = $setting["cron"]["num_of_pass_holding_capacity"];
+	foreach( $passes_held_by_user as $username => $passes ){
+		if( count($passes) <= $capacity ) continue;
+		usort( $passes, function($a, $b){return $a["creationtime"] - $b["creationtime"];} );
+		$expired_passes = array_slice( $passes, 0, count($passes) - $capacity );
+		foreach( $expired_passes as $p ){
+			$sessionkey = $p["sessionkey"];
+			$ipaddr     = $p["ipaddr"];
+			$src = "status/pass/$sessionkey.ini";
+			$dst = "status/pass_expired/$sessionkey.ini";
+			rename( $src, $dst );
+			log_info("expire the pass that exceeded holding capacity, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
+			log_tty ("expire the pass that exceeded holding capacity, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
+			$acceptedlist_is_changed = true;
+		}
+	}
 
 	if( file_exists("status/cleanup") ) $r = unlink( "status/cleanup" );
 	return true;
