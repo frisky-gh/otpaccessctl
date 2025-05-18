@@ -7,13 +7,17 @@
 
  signup.php -> signup_auth.php -> signup_verify.php
                    |
-                   +-> mail -> signup_confirm.php -> signup_auth2nd.php
+                   +-> mail -> signup_setcookie.php
+                                     |
+                                     +-> signup_confirm.php -> signup_auth2nd.php
 
 ### Authentication method: LDAP 
 
  signup.php -> signup_auth.php -> signup_verify.php
                    |
-                   +-> mail -> signup_confirm.php -> signup_auth2nd.php
+                   +-> mail -> signup_setcookie.php
+                                     |
+                                     +-> signup_confirm.php -> signup_auth2nd.php
 
 ## Sign-in (Pass Issuance) Flow
 
@@ -21,12 +25,23 @@
 
  signin.php -> signin_auth.php -> signin_verify.php
                    |
-                   +-> mail -> signin_confirm.php -> signin_auth2nd.php -> signin_complete.php
+                   +-> mail -> signin_setcookie.php
+                                     |
+                                     +-> signin_confirm.php -> signin_auth2nd.php -> signin_complete.php
+                                                                     |
+                                                                     +-> mail (if signout is enabled)
 
 ### Authentication method: LDAP 
 
  signin.php -> signin_auth.php -> signin_complete.php
 
+## Sign Out Flow
+
+ signout.php -> signout_auth.php -> signout_complete.php
+
+ mail -> signout_setocookie.php
+                |
+                +-> signout.php -> signout_auth.php -> signout_complete.php
 
 ## Flow of Account
 
