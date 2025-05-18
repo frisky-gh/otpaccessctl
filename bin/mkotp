@@ -1,0 +1,34 @@
+#!/bin/php
+<?php
+
+require(__DIR__."/../lib/php-totp/src/Base32.php");
+require(__DIR__."/../lib/php-totp/src/Hotp.php");
+require(__DIR__."/../lib/php-totp/src/Totp.php");
+
+function generate_token ($secret, $time, $period = 30, $digits = 6) {
+	$base32 = new \lfkeitel\phptotp\Base32();
+
+	$secret_decoded = $base32->decode($secret);
+
+	$totp  = new \lfkeitel\phptotp\Totp( "sha1", 0, $period );
+	$token = $totp->GenerateToken($secret_decoded, $time, $digits);
+	return $token;
+}
+
+if ($argc < 4) {
+    echo "エラー: このスクリプトは 4 個の引数を必要とします。\n";
+    echo "usage: % ${argv[0]} SECRET YYYY-mm-dd HH:MM:SS\n";
+    exit(1); // エラーコード1で終了
+}
+
+$secret = $argv[1];
+$tz = rtrim( shell_exec("readlink /etc/localtime | awk -F/ '{print \$(NF-1)\"/\"\$NF}'") );
+date_default_timezone_set($tz);
+$unixtime = strtotime("${argv[2]} ${argv[3]}");
+print "${argv[2]} ${argv[3]} => $unixtime\n";
+
+$otp = generate_token( $secret, $unixtime );
+
+print "${otp}\n";
+
+
