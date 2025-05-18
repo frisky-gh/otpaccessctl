@@ -32,6 +32,9 @@
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="navbar-nav ms-auto my-2 my-lg-0">
                         <li class="nav-item"><a class="nav-link" href="show.php">Show status</a></li>
+	                <?php if( isset($sessionkey4signout) ){ ?>
+                                <li class="nav-item"><a class="nav-link" href="signout.php">Sign out</a></li>
+	                <?php } ?>
                         <li class="nav-item"><a class="nav-link" href="#signup">Sign up</a></li>
                         <li class="nav-item"><a class="nav-link" href="#signin">Sign in</a></li>
                         <li class="nav-item"><?= $language_selector ?></li>

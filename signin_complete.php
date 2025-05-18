@@ -3,29 +3,28 @@
 // load libraries
 require("lib/common.php");
 
+$language_selector = null;
 try{
 	$setting = load_setting();
 	set_channel_of_log("signin_complete");
-	load_messagecatalog("app", $setting["web"]["lang"]);
 	log_info("load_setting: success.");
 
 	validate_inputs();
-	$sessionkey = $_GET["sessionkey"];
+	$sessionkey = $_COOKIE["sessionkey"];
 	log_info("validate_inputs: success.", ["sessionkey" => $sessionkey]);
 
-	if     ( $setting["web"]["auth_method"] == "maildomain" && $sessionkey == "" ){
+	$lang = $_COOKIE["lang"] ?? $setting["web"]["default_lang"];
+	$language_selector = generate_language_selector( $lang, $setting["web"]["lang_list"] );
+	load_messagecatalog("app", $lang);
+	log_info("load_messagecatalog: success.", ["lang" => $lang]);
+
+	if     ( $sessionkey == "" ){
 		// nothing to do
 
-	}elseif( $setting["web"]["auth_method"] == "maildomain" ){
+	}else{
 		$r = pass_is_activated( $sessionkey );
 		log_info("pass_is_activated: success.", ["r" => $r, "sessionkey" => $sessionkey]);
 
-	}elseif( $setting["web"]["auth_method"] == "ldap" ){
-		$r = pass_is_activated( $sessionkey );
-		log_info("pass_is_activated: success.", ["r" => $r]);
-
-	}else{
-		$r = "error";
 	}
 
 }catch(Exception $e) {

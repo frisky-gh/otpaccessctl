@@ -18,18 +18,9 @@ try{
 	if( empty($token) )    throw new ErrorException("empty_token");
 	log_info("validate_inputs: success.", ["username" => $username, "token" => $token]);
 
-	if     ( $setting["web"]["auth_method"] == "maildomain" ){
-		$mail = $username . "@" . $setting["maildomain"]["domain"];
-
-	}elseif( $setting["web"]["auth_method"] == "ldap" ){
-		$mail = auth_by_ldap($setting, $username, $password);
-		if( !$mail )           throw new ErrorException("error_in_auth_by_ldap");
-		if( empty($password) ) throw new ErrorException("empty_password");
-		log_info("auth_by_ldap: success.", ["username" => $username, "mail" => $mail]);
-
-	}else{
-		throw new ErrorException("unknown_auth_method");
-	}
+	$r = get_mailaddress_of_user( $setting, $username, $password );
+	if( isset($r["error"]) ) throw new ErrorException($r["error"]);
+	$mail = $r["result"];
 
 	$acct = load_account( $username );
 	if( !$acct ) throw new ErrorException("unmatch_username_or_token");
@@ -45,22 +36,25 @@ try{
 	$sessionkey = generate_sessionkey();
 	$ipaddr = $_SERVER['REMOTE_ADDR'];
 
-	if     ( $setting["web"]["auth_method"] == "maildomain" ){
-		$r = store_pass($sessionkey, $username, $ipaddr, false);
+	if     ( $setting["web"]["auth_method"] == "maildomain" || $setting["web"]["auth_method"] == "mailaddress" ){
+		$r = store_pass($sessionkey, $username, $ipaddr, $mail, false);
 		if( !$r ) throw new ErrorException("error_in_store_pass");
 		log_info("store_pass: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
 
-		$r = send_mail_at_pass_issuance( $setting, $mail, $username, $sessionkey );
+		$r = send_mail_at_pass_issuance( $setting, $mail, $username, $sessionkey, $ipaddr );
 		if( !$r ) throw new ErrorException("error_in_send_mail_at_pass_issuance");
 		log_info("send_mail_at_pass_issuance: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr, "mail" => $mail]);
 
 		$location = "signin_verify.php?ipaddr={$ipaddr}";
 
 	}elseif( $setting["web"]["auth_method"] == "ldap" ){
-		$r = store_pass($sessionkey, $username, $ipaddr, true);
+		$r = store_pass($sessionkey, $username, $ipaddr, $mail, true);
 		if( !$r ) throw new ErrorException("error_in_store_pass");
 		log_info("store_pass: success.", ["username" => $username, "sessionkey" => $sessionkey, "ipaddr" => $ipaddr]);
-		$location = "signin_complete.php?ipaddr={$ipaddr}&sessionkey={$sessionkey}";
+
+		$url_directory = dirname($_SERVER['REQUEST_URI']);
+		setcookie("sessionkey", $sessionkey, time() + 3600, $url_directory);
+		$location = "signin_complete.php?ipaddr={$ipaddr}";
 
 	}else{
 		throw new ErrorException("unknown_auth_method");

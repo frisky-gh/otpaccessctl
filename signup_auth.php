@@ -16,18 +16,9 @@ try{
 	if( empty($username) ) throw new ErrorException("empty_username");
 	log_info("validate_inputs: success.", ["username" => $username]);
 
-	if     ( $setting["web"]["auth_method"] == "maildomain" ){ 
-		$mail = $username . "@" . $setting["maildomain"]["domain"];
-
-	}elseif( $setting["web"]["auth_method"] == "ldap" ){ 
-		$mail = auth_by_ldap($setting, $username, $password);
-		if( !$mail )           throw new ErrorException("unmatch_username_or_password");
-		if( empty($password) ) throw new ErrorException("empty_password");
-		log_info("auth_by_ldap: success.", ["username" => $username, "mail" => $mail]);
-
-	}else{ 
-		throw new ErrorException("unknown_auth_method");
-	}
+	$r = get_mailaddress_of_user( $setting, $username, $password );
+	if( isset($r["error"]) ) throw new ErrorException($r["error"]);
+	$mail = $r["result"];
 
 	$acct = load_account($username, true, true);
 	if( $acct ){
@@ -44,9 +35,9 @@ try{
 	if( !$r ) throw new ErrorException("error_in_store_account");
 	log_info("store_account: success.", ["username" => $username, "sessionkey" => $sessionkey]);
 
-	$r = send_mail_at_account_issuance( $setting, $mail, $username, $sessionkey );
-	if( !$r ) throw new ErrorException("error_in_send_mail_at_account_issuance");
-	log_info("send_mail_at_account_issuance: success.", ["username" => $username, "sessionkey" => $sessionkey, "mail" => $mail]);
+	$r = send_mail_at_account_registration( $setting, $mail, $username, $sessionkey );
+	if( !$r ) throw new ErrorException("error_in_send_mail_at_account_registration");
+	log_info("send_mail_at_account_registration: success.", ["username" => $username, "sessionkey" => $sessionkey, "mail" => $mail]);
 
 	$location = "signup_verify.php";
 

@@ -11,7 +11,7 @@
 	<?php if( $r ){ ?>
 	    <title><?= $setting["web"]["app_name"] ?>: Accepted!</title>
 	<?php }else{ ?>
-	    <meta http-equiv="refresh" content="5; URL=signin_complete.php?sessionkey=<?= $sessionkey ?>" />
+	    <meta http-equiv="refresh" content="5; URL=signin_complete.php" />
 	    <title><?= $setting["web"]["app_name"] ?>: Waiting...</title>
 	<?php } ?>
 
@@ -37,6 +37,7 @@
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="navbar-nav ms-auto my-2 my-lg-0">
                         <li class="nav-item"><a class="nav-link" href="signin.php">Sign in</a></li>
+                        <li class="nav-item"><a class="nav-link" href="signout.php">Sign out</a></li>
                     </ul>
                 </div>
             </div>
