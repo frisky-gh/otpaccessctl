@@ -5,6 +5,10 @@ Require all denied
 <Files "*.php">
 	Require all granted
 </Files>
+<Files "admin_*.php">
+        Require ip 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 127.0.0.0/8
+</Files>
+
 ## You can restrict signup operations.
 #<Files "signup*.php">
 #	Require ip xxx.xxx.xxx.xxx

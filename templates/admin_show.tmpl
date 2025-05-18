@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+	<meta charset="utf-8" />
+	<link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+    </head>
+    <body>
+	<script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
+	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+	<h2><?= $setting["web"]["app_name"] ?>: User List for <?= $setting["web"]["org_name"] ?> Administrators</h2>
+
+	<h3>Available Accounts:</h3>
+	<div id="available_accounts_box"></div>
+
+	<h3>Unavailable Accounts:</h3>
+	<div id="unavailable_accounts_box"></div>
+
+	<script>
+
+	    const date_formatter = new Intl.DateTimeFormat("ja-JP", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit"
+	    });
+
+	    //// Initialize Step 1 : Object Construction
+	    const grid = new gridjs.Grid({
+		columns: [
+		    { name: 'username',    width: "240px" },
+		    { name: 'creation at', width: "160px" },
+		    { name: 'actions',     width: "120px" }
+		],
+		data: [],
+		width: "80%",
+		pagination: { limit: 50, summary: false },
+		search: true,
+		sort: { multiColumn: true }
+	    });
+	    grid.render(document.getElementById("available_accounts_box"));
+
+	    const grid4unavail = new gridjs.Grid({
+		columns: [
+		    { name: 'username',    width: "240px" },
+		    { name: 'creation at', width: "160px" },
+		    { name: 'actions',     width: "120px" }
+		],
+		data: [],
+		width: "80%",
+		fixedHeader: true,
+		pagination: { limit: 20, summary: false },
+		search: true,
+		sort: { multiColumn: true }
+	    });
+	    grid4unavail.render(document.getElementById("unavailable_accounts_box"));
+
+	    const available_account_config   = { list: [], grid: grid };
+	    const unavailable_account_config = { list: [], grid: grid4unavail };
+
+	    //// Initialize Step 2 : Column Setting
+	    function removeAccount( username, account_list ){
+		console.log(`removeAccount("${username}")`);
+		console.log("account_list", account_list);
+		var target;
+		for( const [index, entry] of account_list.entries() ){
+		    if( entry.username != username ) continue;
+		    target = index;
+		}
+		if( target == null ) return false;
+		console.log("target", target);
+		account_list.splice( target, 1 );
+	    }
+
+	    function generateActionButtons (cell, row, config) {
+		const username  = row.cells[0].data;
+		const create_at = row.cells[1].data;
+		const button1 = gridjs.h('button', {
+		    className: 'button',
+		    onClick: () => { alert(`"${username}" "${create_at}"`) }
+		}, 'Show');
+		const button2 = gridjs.h('button', {
+		    className: 'button',
+		    onClick: () => {
+			axios.post(
+				'admin_revoke_user.php',
+				{ "username": username },
+				{ headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+			)
+			.then(response => {
+				console.log("responce", response.data)
+				if( response.data.result != true ){
+					console.error("admin_revoke_user.php: error");
+					return;
+				}
+				removeAccount( username, config.list );
+				config.grid.updateConfig({ data: config.list }).forceRender();
+			})
+			.catch(error => console.error('Error:', error));
+		    }
+		}, 'Revoke');
+
+ 		// return gridjs.h('div', {}, button1, button2);
+ 		return gridjs.h('div', {}, button2);
+	    }
+
+	    grid.updateConfig({
+		columns: [
+		    { name: 'username',    width: "240px",
+		      data: (row) => row.username },
+		    { name: 'creation at', width: "160px",
+		      data: (row) => date_formatter.format(row.creationtime*1000) },
+		    { name: 'actions',     width: "120px",
+		      formatter: (cell, row) => generateActionButtons(cell, row, available_account_config) }
+		],
+	    }).forceRender();
+	    grid4unavail.updateConfig({
+		columns: [
+		    { name: 'username',    width: "240px",
+		      data: (row) => row.username },
+		    { name: 'creation at', width: "160px",
+		      data: (row) => date_formatter.format(row.creationtime*1000) },
+		    { name: 'actions',     width: "120px",
+		      formatter: (cell, row) => generateActionButtons(cell, row, unavailable_account_config) }
+		],
+	    }).forceRender();
+
+	    //// Initialize Step 3 : Data Download
+	    axios.get( 'admin_list_users.php' )
+	    .then(response => {
+		console.log("responce", response.data)
+		available_account_config.list = response.data;
+		grid.updateConfig({ data: response.data }).forceRender();
+	    })
+	    .catch(error => console.error('Error:', error));
+
+	    axios.get( 'admin_list_users.php?unauthed=1' )
+	    .then(response => {
+		console.log("responce4unavail", response.data)
+		unavailable_account_config.list = response.data;
+		grid4unavail.updateConfig({ data: response.data }).forceRender();
+	    })
+	    .catch(error => console.error('Error:', error));
+	</script>
+    </body>
+</html>
