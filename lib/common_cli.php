@@ -58,36 +58,47 @@ function standby_during_period_of_exec ( $setting, $starttime, $acceptance_func 
 }
 
 function activate_and_cleanup_passes ( $setting, $must_be_cleaned_up = true ) {
-	$acceptedlist_is_changed = false;
-	activate_passes( $acceptedlist_is_changed );
-	log_tty("activated the new passes.");
-	if( $must_be_cleaned_up || cleanup_is_directed() ){
-	       	cleanup_passes( $setting, $acceptedlist_is_changed );
-		log_tty("cleanup the old requests.");
+	log_tty("checking inactive or expiring passes...");
+
+	$acceptedlist_must_be_updated = false;
+	if( activate_inactive_passes() ){
+		$acceptedlist_must_be_updated = true;
+		log_tty("activated the inactive passes.");
 	}
-	if( !$must_be_cleaned_up && !$acceptedlist_is_changed ) return;
+	if( expire_expiring_passes() ){
+		$acceptedlist_must_be_updated = true;
+		log_tty("expired the expiring passes.");
+	}
+	if( $must_be_cleaned_up || cleanup_is_directed() ){
+		if( cleanup_passes($setting) ){
+			$acceptedlist_must_be_updated = true;
+			log_tty("cleanup the old requests.");
+		}
+	}
 
-	$acceptedlist      = generate_acceptedlist();
+	if( !$must_be_cleaned_up && !$acceptedlist_must_be_updated ) return;
+
+	$new_acceptedlist  = generate_acceptedlist();
 	$last_acceptedlist = load_acceptedlist();
-	if( !two_acceptedlists_are_diffent($acceptedlist, $last_acceptedlist) ) return;
+	if( !two_acceptedlists_are_different($new_acceptedlist, $last_acceptedlist) ) return;
 
-	log_tty("the accepted list should be updated.");
-	log_info("the accepted list should be updated.");
-	store_acceptedlist( $acceptedlist );
+	log_tty ("the accepted list must be replaced by new one.");
+	log_info("the accepted list must be replaced by new one.");
+	store_acceptedlist( $new_acceptedlist );
 
 	$write_command  = $setting["cron"]["write_command"];
 	$reload_command = $setting["cron"]["reload_command"];
 	if( $write_command != "" ){
-		log_tty( "write_command: {$write_command}" );
+		log_tty ("write_command: {$write_command}");
 		$output = system( "{$write_command}", $result );
-		log_tty("write_command: output={$output}, result={$result}");
+		log_tty ("write_command: output={$output}, result={$result}");
 		log_info("write_command: output={$output}, result={$result}");
 		if( $result != 0 ) return ;
 	}
 	if( $reload_command != "" ){
-		log_tty( "reload_command: {$reload_command}" );
+		log_tty ("reload_command: {$reload_command}");
 		$output = system( "{$reload_command}", $result );
-		log_tty("reload_command: output={$output}, result={$result}");
+		log_tty ("reload_command: output={$output}, result={$result}");
 		log_info("reload_command: output={$output}, result={$result}");
 		if( $result != 0 ) return ;
 	}

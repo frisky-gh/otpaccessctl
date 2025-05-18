@@ -73,12 +73,14 @@ function load_setting() {
 	$setting["web"]["base_url"] ??= "https://example.com/otpaccessctl/";
 	$setting["web"]["base_url"] = preg_replace('|/$|', '', $setting["web"]["base_url"] );
 	$setting["web"]["expiration_min_of_issuance"] ??= 15;
+	$setting["web"]["expiration_min_of_registration"] ??= 15;
 	$setting["web"]["auth_method"] ??= "maildomain";
 	$setting["web"]["app_name"]    ??= "OTPAccessCtl";
 	$setting["web"]["org_name"]    ??= "example.com";
 	$setting["web"]["lang"]        ??= "en";
 	$setting["web"]["default_lang"] ??= "en";
 	$setting["web"]["lang_list"] = preg_split( "/,/", $setting["web"]["lang_list"] ?? "en,ja" );
+	$setting["web"]["enable_signout"] ??= false;
 
 	return $setting;
 }
@@ -119,28 +121,21 @@ function validate_inputs() {
 	$ok = true;
 	$_GET["message"] ??= null;
 
-	if( !array_key_exists("username", $_GET)  ) $_GET ["username"] = null;
-	else if( !preg_match('|^[-+.\w]{1,80}$|', $_GET ["username"]) )  $_GET ["username"] = null;
-	if( !array_key_exists("username", $_POST) ) $_POST["username"] = null;
-	else if( !preg_match('|^[-+.\w]{1,80}$|', $_POST ["username"]) ) $_POST["username"] = null;
+	if( !validate_input("username", "|^[-+.@\w]{1,80}$|", true, true, false) ) $ok = false;
 
 	if( !array_key_exists("password", $_POST) ) $_POST["password"] = null;
 	else if( !preg_match('|^[\x20-\x7e]{1,80}$|', $_POST ["password"]) ) $_POST["password"] = null;
 
-	if( !array_key_exists("sessionkey", $_GET)  ) $_GET ["sessionkey"] = null;
-	else if( !preg_match('|^[0-9a-fA-F]{1,256}$|', $_GET ["sessionkey"]) ) $_GET ["sessionkey"] = null;
-	if( !array_key_exists("sessionkey", $_POST) ) $_POST["sessionkey"] = null;
-	else if( !preg_match('|^[0-9a-fA-F]{1,256}$|', $_POST["sessionkey"]) ) $_POST["sessionkey"] = null;
+	if( !validate_input("sessionkey4signout", "|^[0-9a-fA-F]{1,256}$|", false, false, true) ) $ok = false;
+	if( !validate_input("sessionkey",         "|^[0-9a-fA-F]{1,256}$|", true,  true,  true) ) $ok = false;
 
 	if( !array_key_exists("token", $_POST) ) $_POST["token"] = null;
 	else if( !preg_match('|^\d{1,16}$|', $_POST["token"]) ) $_POST["token"] = null;
 
-	if( !array_key_exists("ipaddr", $_GET)  ) $_GET ["ipaddr"] = null;
-	else if( !preg_match('|^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|', $_GET ["ipaddr"]) ) $_GET ["ipaddr"] = null;
-	if( !array_key_exists("ipaddr", $_POST)  ) $_POST["ipaddr"] = null;
-	else if( !preg_match('|^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|', $_POST["ipaddr"]) ) $_POST["ipaddr"] = null;
+	if( !validate_input("ipaddr", "|^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$|", true, true, false) ) $ok = false;
 
 	if( !validate_input("lang", "|^\w+$|", true, false, true) ) $ok = false;
+	if( !validate_input("unauthed", "|^[01]$|", true, false, false) ) $ok = false;
 
 	return $ok;
 }
@@ -246,7 +241,7 @@ function generate_qrcode ($text) {
 
 function remove_account ($username) {
 	$authedfile   = "status/account/{$username}.ini";
-	$unauthedfile = "status/account_unathed/{$username}.ini";
+	$unauthedfile = "status/account_unauthed/{$username}.ini";
 	if( file_exists($authedfile) ){
 		if( !unlink($authedfile) ){
 			return false;
@@ -298,9 +293,31 @@ function store_account ($username, $totpsecret, $sessionkey) {
 	return true;
 }
 
+function list_accounts ($list_authed_accounts) {
+	$authed_account_dir   = "status/account";
+	$unauthed_account_dir = "status/account_unauthed";
+	if( $list_authed_accounts ) $dir = $authed_account_dir;
+	else $dir = $unauthed_account_dir;
+
+	$r = [];
+	$dh = opendir( $dir );
+	while( false !== ($entry = readdir($dh)) ){
+		$matches = null;
+		if( !preg_match('/^([-+.\w]+)\.ini$/', $entry, $matches) ) continue;
+		if( $matches == null || $matches[1] == null ) continue;
+
+		$acct = parse_ini_file( "$dir/$entry" );
+		if( $acct == null ) continue;
+
+		array_push( $r, $acct );
+	}
+	closedir( $dh );
+	return $r;
+}
+
 //// functions about pass file input / output
 
-function store_pass ($sessionkey, $username, $ipaddr, $store_pass_as_authed) {
+function store_pass ($sessionkey, $username, $ipaddr, $mail, $store_pass_as_authed) {
 	$unauthedfile = "status/pass_unauthed/{$sessionkey}.ini";
 	$authedfile   = "status/pass_inactive/{$sessionkey}.ini";
 	$now = time();
@@ -308,6 +325,7 @@ function store_pass ($sessionkey, $username, $ipaddr, $store_pass_as_authed) {
 	$content .= "username={$username}\n";
 	$content .= "sessionkey={$sessionkey}\n";
 	$content .= "ipaddr={$ipaddr}\n";
+	$content .= "mail={$mail}\n";
 	$content .= "creationtime={$now}\n";
 
 	if( $store_pass_as_authed ){ file_put_contents($authedfile,   $content); }
@@ -319,6 +337,7 @@ function load_pass ($sessionkey, $load_pass_in_authed, $load_pass_activated = fa
 	$unauthedfile  = "status/pass_unauthed/{$sessionkey}.ini";
 	$authedfile    = "status/pass_inactive/{$sessionkey}.ini";
 	$activatedfile = "status/pass/{$sessionkey}.ini";
+	$expiringfile  = "status/pass_expiring/{$sessionkey}.ini";
 
 	if( !$load_pass_activated && $load_pass_in_authed  && file_exists($authedfile) ){
 		$pass = parse_ini_file( $authedfile );
@@ -335,6 +354,11 @@ function load_pass ($sessionkey, $load_pass_in_authed, $load_pass_activated = fa
 		if( $pass != false ) return $pass;
 	}
 
+	if( $load_pass_activated  && $load_pass_in_authed  && file_exists($expiringfile) ){
+		$pass = parse_ini_file( $expiringfile );
+		if( $pass != false ) return $pass;
+	}
+
 	return null;
 }
 
@@ -347,6 +371,15 @@ function validate_pass ($sessionkey) {
 	return true;
 }
 
+function expire_pass ($sessionkey) {
+	$activatedfile = "status/pass/{$sessionkey}.ini";
+	$expiringfile  = "status/pass_expiring/{$sessionkey}.ini";
+	if( !file_exists($activatedfile) ) return false;
+	if( file_exists($expiringfile) )   return false;
+	if( !rename($activatedfile, $expiringfile) ) return false;
+	return true;
+}
+
 function pass_is_activated ($sessionkey) {
 	$authedfile = "status/pass_inactive/{$sessionkey}.ini";
 	$activefile = "status/pass/{$sessionkey}.ini";
@@ -356,25 +389,71 @@ function pass_is_activated ($sessionkey) {
 	return false;
 }
 
-function activate_passes( &$acceptedlist_is_changed ) {
+function pass_is_expired ($sessionkey) {
+	$expiredfile  = "status/pass_expired/{$sessionkey}.ini";
+	$expiringfile = "status/pass_expiring/{$sessionkey}.ini";
+
+	if( file_exists($expiringfile) ) return false;
+	if( file_exists($expiredfile) ) return true;
+	return false;
+}
+
+function activate_inactive_passes () {
+	$target_passes = [];
 	$dh = opendir( "status/pass_inactive" );
 	while( false !== ($entry = readdir($dh)) ){
 		$matches = null;
 		if( !preg_match('/^([0-9a-f]+)\.ini$/', $entry, $matches) ) continue;
-		$src = "status/pass_inactive/".$entry;
-		$dst = "status/pass/".$entry;
-		rename( $src, $dst );
-		$acceptedlist_is_changed = true;
-
 		if( $matches == null || $matches[1] == null ) continue;
+
 		$sessionkey = $matches[1];
-		$pass = load_pass ($sessionkey, true, true);
+		$pass = load_pass ($sessionkey, true, false);
 		if( $pass == null ) continue;
 
 		$ipaddr = $pass["ipaddr"];
 		$username = $pass["username"];
 		log_info("accepte new pass, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
 		log_tty ("accepte new pass, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
+		array_push( $target_passes, $sessionkey );
+	}
+	closedir( $dh );
+
+	if( count($target_passes) == 0 ) return false;
+
+	foreach( $target_passes as $target_pass ){
+		$src = "status/pass_inactive/$target_pass.ini";
+		$dst = "status/pass/$target_pass.ini";
+		rename( $src, $dst );
+	}
+	return true;
+}
+
+function expire_expiring_passes () {
+	$target_passes = [];
+	$dh = opendir( "status/pass_expiring" );
+	while( false !== ($entry = readdir($dh)) ){
+		$matches = null;
+		if( !preg_match('/^([0-9a-f]+)\.ini$/', $entry, $matches) ) continue;
+		if( $matches == null || $matches[1] == null ) continue;
+
+		$sessionkey = $matches[1];
+		$pass = load_pass ($sessionkey, true, true);
+		if( $pass == null ) continue;
+
+		$ipaddr = $pass["ipaddr"];
+		$username = $pass["username"];
+		log_info("expire a pass, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
+		log_tty ("expire a pass, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
+		array_push( $target_passes, $sessionkey );
+	}
+	closedir( $dh );
+
+	if( count($target_passes) == 0 ) return false;
+
+	foreach( $target_passes as $target_pass ){
+		$src = "status/pass_expiring/$target_pass.ini";
+		$dst = "status/pass_expired/$target_pass.ini";
+		rename( $src, $dst );
 	}
 	return true;
 }
@@ -388,7 +467,8 @@ function cleanup_is_directed() {
 	return $r;
 }
 
-function cleanup_passes( $setting, &$acceptedlist_is_changed ) {
+function cleanup_passes( $setting ) {
+	$target_passes = [];
 	$passes_held_by_user = [];
 	$dh = opendir( "status/pass" );
 	$time = time();
@@ -396,15 +476,14 @@ function cleanup_passes( $setting, &$acceptedlist_is_changed ) {
 		if( !preg_match('/^[0-9a-f]+\.ini$/', $entry) ) continue;
 		$acceptedfile = parse_ini_file( "status/pass/".$entry );
 
-		$username = $acceptedfile["username"];
+		$sessionkey = $acceptedfile["sessionkey"];
+		$username   = $acceptedfile["username"];
+		$ipaddr     = $acceptedfile["ipaddr"];
 		$timeout = $acceptedfile["creationtime"] + $setting["cron"]["lifetime_min_of_pass"] * 60;
 		if( $time >= $timeout ){
-			$src = "status/pass/".$entry;
-			$dst = "status/pass_expired/".$entry;
-			rename( $src, $dst );
 			log_info("expire old pass, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
 			log_tty ("expire old pass, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
-			$acceptedlist_is_changed = true;
+			array_push( $target_passes, $sessionkey );
 			continue;
 		}
 
@@ -424,16 +503,21 @@ function cleanup_passes( $setting, &$acceptedlist_is_changed ) {
 		foreach( $expired_passes as $p ){
 			$sessionkey = $p["sessionkey"];
 			$ipaddr     = $p["ipaddr"];
-			$src = "status/pass/$sessionkey.ini";
-			$dst = "status/pass_expired/$sessionkey.ini";
-			rename( $src, $dst );
 			log_info("expire the pass that exceeded holding capacity, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
 			log_tty ("expire the pass that exceeded holding capacity, sessionkey={$sessionkey}, username={$username}, ipaddr={$ipaddr}.");
-			$acceptedlist_is_changed = true;
+			array_push( $target_passes, $sessionkey );
 		}
 	}
 
 	if( file_exists("status/cleanup") ) $r = unlink( "status/cleanup" );
+
+	if( count($target_passes) == 0 ) return false;
+
+	foreach( $target_passes as $target_pass ){
+		$src = "status/pass/$target_pass.ini";
+		$dst = "status/pass_expired/$target_pass.ini";
+		rename( $src, $dst );
+	}
 	return true;
 }
 
@@ -462,7 +546,7 @@ function load_acceptedlist() {
 	return $acceptedlist;
 }
 
-function two_acceptedlists_are_diffent($acceptedlist, $last_acceptedlist) {
+function two_acceptedlists_are_different($acceptedlist, $last_acceptedlist) {
 	ksort( $acceptedlist );
 	ksort( $last_acceptedlist );
 	$acceptedlist_concat      = implode("\n", $acceptedlist);
@@ -482,16 +566,38 @@ function store_acceptedlist( $acceptedlist ) {
 $loader = new \Twig\Loader\FilesystemLoader(__DIR__."/..");
 $twig   = new \Twig\Environment($loader);
 
-function send_mail_at_account_issuance ($setting, $mail, $username, $sessionkey) {
+function get_mailaddress_of_user ($setting, $username, $password) {
+	if( $setting["web"]["auth_method"] == "mailaddress" ){
+		return [ "result" => $username ];
+	}
+
+	if( $setting["web"]["auth_method"] == "maildomain" ){
+		return [ "result" => $username . "@" . $setting["maildomain"]["domain"] ];
+	}
+
+	if( $setting["web"]["auth_method"] == "ldap" ){
+		$mail = auth_by_ldap($setting, $username, $password);
+		if( !$mail )           return ["error" => "unmatch_username_or_password"];
+		if( empty($password) ) return ["error" => "empty_password"];
+		log_info("auth_by_ldap: success.", ["username" => $username, "mail" => $mail]);
+		return ["result" => $mail];
+	}
+
+	return [ "error" => "unknown_auth_method" ];
+}
+
+function send_mail_at_account_registration ($setting, $mail, $username, $sessionkey) {
 	global $twig;
-	$content = $twig->render( "conf/mail_at_account_issuance.tmpl", [
+	$content = $twig->render( "conf/mail_at_account_registration.tmpl", [
 		"username"   => $username,
 		"sessionkey" => $sessionkey,
 		"now" => date("Y-m-d H:i:s"),
-		"base_url"                   => $setting["web"]["base_url"],
-		"expiration_min_of_issuance" => $setting["web"]["expiration_min_of_issuance"],
+		"app_name"                       => $setting["web"]["app_name"],
+		"org_name"                       => $setting["web"]["org_name"],
+		"base_url"                       => $setting["web"]["base_url"],
+		"expiration_min_of_registration" => $setting["web"]["expiration_min_of_registration"],
 	] );
-	$header = parse_ini_file( "conf/mail_at_account_issuance.ini" );
+	$header = parse_ini_file( "conf/mail_at_account_registration.ini" );
 	$header["From"]    ??= "System <admin@example.com>";
 	$header["Subject"] ??= "Subject";
 
@@ -502,16 +608,40 @@ function send_mail_at_account_issuance ($setting, $mail, $username, $sessionkey)
 	return true;
 }
 
-function send_mail_at_pass_issuance ($setting, $mail, $username, $sessionkey) {
+function send_mail_at_pass_issuance ($setting, $mail, $username, $sessionkey, $ipaddr) {
 	global $twig;
 	$content = $twig->render( "conf/mail_at_pass_issuance.tmpl", [
 		"username"   => $username,
 		"sessionkey" => $sessionkey,
 		"now" => date("Y-m-d H:i:s"),
+		"app_name"                   => $setting["web"]["app_name"],
+		"org_name"                   => $setting["web"]["org_name"],
 		"base_url"                   => $setting["web"]["base_url"],
 		"expiration_min_of_issuance" => $setting["web"]["expiration_min_of_issuance"],
 	] );
 	$header = parse_ini_file( "conf/mail_at_pass_issuance.ini" );
+	$header["From"]    ??= "System <admin@example.com>";
+	$header["Subject"] ??= "Subject";
+
+	$subject = $header["Subject"];
+	unset( $header["Subject"] );
+
+	mb_send_mail( $mail, $subject, $content, $header );
+	return true;
+}
+
+function send_mail_for_signout ($setting, $mail, $username, $sessionkey, $ipaddr, $expiration_date) {
+	global $twig;
+	$content = $twig->render( "conf/mail_for_signout.tmpl", [
+		"username"        => $username,
+		"sessionkey"      => $sessionkey,
+		"ipaddr"          => $ipaddr,
+		"expiration_date" => date("Y-m-d H:i", $expiration_date),
+		"app_name"        => $setting["web"]["app_name"],
+		"org_name"        => $setting["web"]["org_name"],
+		"base_url"        => $setting["web"]["base_url"],
+	] );
+	$header = parse_ini_file( "conf/mail_for_signout.ini" );
 	$header["From"]    ??= "System <admin@example.com>";
 	$header["Subject"] ??= "Subject";
 
