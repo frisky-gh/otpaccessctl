@@ -1,0 +1,5 @@
+;
+Subject="You can sign out from your site"
+; Field "From" should not include bulti-byte string.
+From="System <admin@exapmle.com>"
+

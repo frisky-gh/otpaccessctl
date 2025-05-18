@@ -1,0 +1,22 @@
+{{ username }} さん
+
+{{ org_name }} のサイトへの通行証が発行されました。
+通行証は {{expiration_date}} に自動的に廃却されますが、
+それより前に返却することも可能です。
+
+  返却用URL : {{ base_url }}/signout_setcookie.php?sessionkey={{ sessionkey }}
+
+通行証を返却する場合は上記URLにアクセスしてください。
+
+----
+
+Hi {{username}},
+
+A site pass to {{org_name}} has been issued for you.
+The pass is going to be expired automatically after {{expiration_date}}.
+You can also revoke it before the expiration date.
+
+  URL to revoke your pass: {{base_url}}/signin_setcookie.php?sessionkey={{sessionkey}}
+
+If you want to revoke your pass, please click URL above.
+

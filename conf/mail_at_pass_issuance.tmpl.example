@@ -1,9 +1,26 @@
+{{username}} さん
+
+{{org_name}} への通行証の発行手続きが開始されました.
+このメールに従うことで手続きを進めることができます.
+
+  手続き開始時刻: {{now}}
+  手続き有効期間: {{expiration_min_of_issuance}} min.
+  次の手順のURL : {{base_url }}/signin_setcookie.php?sessionkey={{sessionkey}}
+
+ご自分で通行証の発行手続きを開始した認識があるなら、
+上記URLをクリックして次の手順に進めてください。
+
+----
+
 Hi {{ username }},
 
-Your pass of the sites has been issued.
+You have requested the issuance of your pass to {{org_name}} site.
+This email is a step in the issuance process.
 
-  Issuance time: {{ now }}
-  Expire after : {{ expiration_min_of_issuance }} min.
+  Start at      : {{now}}
+  Expire after  : {{expiration_min_of_issuance}} min.
+  Next step URL : {{base_url}}/signin_setcookie.php?sessionkey={{sessionkey}}
 
-URL: {{ base_url }}/activate.php?username={{ username }}&sessionkey={{ sessionkey }}
+If you have no doubts about this issuance,
+please click URL above to complete the process.
 
