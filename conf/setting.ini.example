@@ -20,10 +20,13 @@ reload_command="bin/reload_apache2.php"
 
 [web]
 base_url = https://example.com/otpaccessctl/
+expiration_min_of_registration = 15
 expiration_min_of_issuance = 15
 
 ; app_name = OTPAccessCtl
 ; org_name = example.com
 ; lang = en
+; enable_signout = false
+
 
 
