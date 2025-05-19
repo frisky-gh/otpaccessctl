@@ -68,6 +68,7 @@ function load_setting() {
 	$setting["cron"]["write_command"]                ??= "bin/write_apache_setting.php";
 	$setting["cron"]["reload_command"]               ??= "";
 	$setting["cron"]["num_of_pass_holding_capacity"] ??= 10;
+	$setting["cron"]["entry_name"]                   ??= "otpaccessctl";
 
 	// web section
 	$setting["web"]["base_url"] ??= "https://example.com/otpaccessctl/";
@@ -303,7 +304,7 @@ function list_accounts ($list_authed_accounts) {
 	$dh = opendir( $dir );
 	while( false !== ($entry = readdir($dh)) ){
 		$matches = null;
-		if( !preg_match('/^([-+.\w]+)\.ini$/', $entry, $matches) ) continue;
+		if( !preg_match('/^([-+.@\w]+)\.ini$/', $entry, $matches) ) continue;
 		if( $matches == null || $matches[1] == null ) continue;
 
 		$acct = parse_ini_file( "$dir/$entry" );

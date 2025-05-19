@@ -9,6 +9,7 @@ try{
 
 	$wd = get_workingdir();
 	$period = $setting["cron"]["interval_min_of_exec_by_cron"];
+	$entry_name = $setting["cron"]["entry_name"];
 
 	//$ansible_cron_arg = "name='otpaccessctl cron job' minute='*/{$period}' job='{$job}'";
 	//$ansible_cmd = "ansible -i loclahost, -c local -m cron -a \"{$ansible_cron_arg}\" all";
@@ -18,12 +19,12 @@ try{
 
 	$job = "cd {$wd} ; bin/cron.php";
 	$job_crontab = "*/{$period} * * * * {$job}\n";
-	$job_label = "# otpaccessctl job\n";
+	$job_label = "# $entry_name job\n";
 	$job_label_index = null;
 
 	$job2 = "cd {$wd} ; bin/cleanup.sh ; bin/stat_daily.sh ; bin/stat_monthly.sh";
 	$job2_crontab = "09 00 * * * {$job2}\n";
-	$job2_label = "# otpaccessctl cleanup\n";
+	$job2_label = "# $entry_name cleanup\n";
 	$job2_label_index = null;
 
 	$in = popen( "crontab -l", "r" );
