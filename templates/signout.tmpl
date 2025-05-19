@@ -51,7 +51,7 @@
 		    <!-- START -->
         	    <form method="POST" action="signout_auth.php">
 		      <input type="hidden" name="sessionkey" value="<?=$sessionkey?>">
-	              <input type="submit" id="submit" value="<?= __('Sign Out') ?>" class="btn btn-primary btn-xl" >
+	              <input type="submit" id="submit" value="<?= __('Sign Out') ?>" class="btn btn-primary btn-xl" <?= isset($sessionkey) && $sessionkey != "" ? "" : "disabled" ?> >
 	            </form>
 		    <!-- END -->
 

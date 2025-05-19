@@ -6,10 +6,8 @@
         <meta name="description" content="" />
         <meta name="author" content="" />
 
-
         <!-- <title>Creative - Start Bootstrap Theme</title> -->
         <title><?= $setting["web"]["app_name"] ?>: Sign in</title>
-
 
         <!-- Favicon-->
         <link rel="icon" type="image/x-icon" href="resources/assets/favicon.ico" />
@@ -24,6 +22,7 @@
         <link href="resources/css/styles.css" rel="stylesheet" />
     </head>
     <body id="page-top">
+	<script src="https://unpkg.com/just-validate@latest/dist/just-validate.production.min.js"></script>
         <!-- Navigation-->
         <nav class="navbar navbar-expand-lg navbar-light fixed-top py-3" id="mainNav">
             <div class="container px-4 px-lg-5">
@@ -54,26 +53,26 @@
                     </div>
 
 		    <!-- START -->
-        	    <form method="POST" action="signin_auth.php">
+		    <?php $username_label = $setting["web"]["auth_method"] == "mailaddress" ? "mail address" : "account name"; ?>
+		    <form method="POST" action="signin_auth.php" id="form">
 	              <div class="form-floating mb-3">
-	                <input class="form-control" name="username" id="username" type="text" placeholder="Enter your name..." data-sb-validations="required" />
-	                <label for="name">User name</label>
-	                <div class="invalid-feedback" data-sb-feedback="name:required">A name is required.</div>
+	                <input class="form-control" name="username" id="username" type="text" />
+	                <label for="name">Enter your <?=$username_label?></label>
 	              </div>
 
 	              <?php if( $setting["web"]["auth_method"] == "ldap" ){ ?>
 	                <div class="form-floating mb-3">
-	                  <input class="form-control" name="password" id="password" type="password" placeholder="********" data-sb-validations="required" />
+	                  <input class="form-control" name="password" id="password" type="password" />
 	                  <label for="name">Password</label>
 	                </div>
 	              <?php } ?>
 
 	              <div class="form-floating mb-3">
-	                <input class="form-control" name="token" id="token" inputmode="numeric" pattern="[0-9]{6,}" type="text" autocomplete="one-time-code" placeholder="123456" data-sb-validations="required" />
+	                <input class="form-control" name="token" id="token" inputmode="numeric" type="text" autocomplete="one-time-code" />
 	                <label for="name">OTP token</label>
 	              </div>
 
-	              <input type="submit" id="submit" value="<?= __('Issue the site pass (Sign in)') ?>" class="btn btn-primary btn-xl" >
+	              <input type="submit" id="submit_button" value="<?= __('Issue the site pass (Sign in)') ?>" class="btn btn-primary btn-xl" >
 
                       <div class="col-lg-10 align-self-baseline dialog" id="dialog-empty_username">
                         Username is empty.
@@ -121,5 +120,35 @@
         <!-- * * Activate your form at https://startbootstrap.com/solution/contact-forms * *-->
         <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
         <script src="https://cdn.startbootstrap.com/sb-forms-latest.js"></script>
+	<script>
+	    const validate = new window.JustValidate(
+		'#form',
+		{
+		    validateBeforeSubmitting: true,
+		    submitFormAutomatically: true,
+		    errorLabelStyle: { color: "#ffbbbb" },
+		    tooltip: { position: 'bottom' }
+		}
+	    );
+	    validate.addField(
+		'#username',
+		<?php if      ( $setting["web"]["auth_method"] == "maildomain" ){ ?>
+		[{rule:'required'}, {rule:'minLength',value:2}, {rule:'maxLength',value:40},
+		 {rule: 'customRegexp',value:/^[-+_.0-9a-zA-Z]+$/}]
+		<?php }else if( $setting["web"]["auth_method"] == "mailaddress" ){ ?>
+		[{rule:'required'}, {rule:'minLength', value:6}, {rule:'maxLength', value:80},
+		 {rule: 'customRegexp',value:/^[-+_.0-9a-zA-Z]+@(([-0-9a-zA-Z]+)\.)+([-0-9a-zA-Z]+)$/}]
+		<?php }else if( $setting["web"]["auth_method"] == "ldap" ){ ?>
+		[{rule:'required'}, {rule:'minLength', value:2}, {rule:'maxLength', value:40},
+		 {rule: 'customRegexp',value:/^[-+_.0-9a-zA-Z]+$/}]
+		<?php }else{ ?>
+		[{rule:'required'}, {rule:'minLength', value:2}, {rule:'maxLength', value:40}]
+		<?php } ?>
+	    ).addField(
+		'#token',
+		[{rule:'required'}, {rule:'integer'}, {rule:'minLength', value:6}, {rule:'maxLength', value:6}]
+	    );
+	    document.getElementById("username").addEventListener( "change", (e)=>{validate.revalidate(e.target);} );
+	</script>
     </body>
 </html>
