@@ -6,6 +6,9 @@ search_basedn = "dc=example,dc=com"
 search_nameattr   = uid
 search_mailattr   = mail
 
+[maildomain]
+domain = example.com
+
 [totp]
 issuer=Example Company Limited
 digits=6
@@ -22,6 +25,9 @@ reload_command="bin/reload_apache2.php"
 base_url = https://example.com/otpaccessctl/
 expiration_min_of_registration = 15
 expiration_min_of_issuance = 15
+
+; "ldap", "maildomain", or "mailaddress"
+auth_method = ldap
 
 ; app_name = OTPAccessCtl
 ; org_name = example.com
