@@ -3,6 +3,32 @@
     <head>
 	<meta charset="utf-8" />
 	<link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+	<style>
+		dialog {
+			position: fixed;
+			top:  0%;
+			left: 0%;
+			transform: translate(0%, 0%);
+		}
+		th.gridjs-th {
+		    padding: 4px 8px;
+		}
+		td.gridjs-td {
+		    padding: 8px;
+		}
+		div.gridjs-footer {
+		    padding: 4px 8px;
+		}
+		div.label-in-dialog {
+		    font-size: 12px;
+		    color: gray;
+		    font-style: italic;
+		    margin-bottom: 1px;
+		}
+		p.value-in-dialog {
+		    margin-top: 1px;
+		}
+	</style>
     </head>
     <body>
 	<script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
@@ -15,6 +41,28 @@
 
 	<h3>Unavailable Accounts:</h3>
 	<div id="unavailable_accounts_box"></div>
+
+	<dialog id="dialog_for_account_deletion">
+		<p>Are you sure you want to delete the account?</p>
+
+		<div class="label-in-dialog">username:</div>
+		<p class="value-in-dialog" id="username_for_account_deletion">username</p>
+		<button id="yes_button_for_account_deletion">OK</button>
+		<button id="no_button_for_account_deletion">NO</button>
+	</dialog>
+
+	<dialog id="dialog_for_comment_modifying">
+		<p>Are you sure you want to change the comment?</p>
+
+		<div class="label-in-dialog">username:</div>
+		<p class="value-in-dialog" id="username_for_comment_modifying">username</p>
+		<div class="label-in-dialog">original comment:</div>
+		<p class="value-in-dialog" id="orig_comment_for_comment_modifying">comment</p>
+		<div class="label-in-dialog">modified comment:</div>
+		<p class="value-in-dialog" id="comment_for_comment_modifying">comment</p>
+		<button id="yes_button_for_comment_modifying">OK</button>
+		<button id="no_button_for_comment_modifying">NO</button>
+	</dialog>
 
 	<script>
 
@@ -30,12 +78,14 @@
 	    //// Initialize Step 1 : Object Construction
 	    const grid = new gridjs.Grid({
 		columns: [
-		    { name: 'username',    width: "240px" },
-		    { name: 'creation at', width: "160px" },
-		    { name: 'actions',     width: "120px" }
+		    { name: 'index',       hidden: true },
+		    { name: 'username',    width: "200px" },
+		    { name: 'creation at', width: "120px" },
+		    { name: 'actions',     width: "80px" },
+		    { name: 'comment',     width: "200px" }
 		],
 		data: [],
-		width: "80%",
+		width: "90%",
 		pagination: { limit: 50, summary: false },
 		search: true,
 		sort: { multiColumn: true }
@@ -44,9 +94,11 @@
 
 	    const grid4unavail = new gridjs.Grid({
 		columns: [
-		    { name: 'username',    width: "240px" },
-		    { name: 'creation at', width: "160px" },
-		    { name: 'actions',     width: "120px" }
+		    { name: 'index',       hidden: true },
+		    { name: 'username',    width: "200px" },
+		    { name: 'creation at', width: "120px" },
+		    { name: 'actions',     width: "80px" },
+		    { name: 'comment',     width: "200px" }
 		],
 		data: [],
 		width: "80%",
@@ -60,9 +112,12 @@
 	    const available_account_config   = { list: [], grid: grid };
 	    const unavailable_account_config = { list: [], grid: grid4unavail };
 
+
+	    var action_target = {};
+
 	    //// Initialize Step 2 : Column Setting
-	    function removeAccount( username, account_list ){
-		console.log(`removeAccount("${username}")`);
+	    function removeAccountFromCache( username, account_list ){
+		console.log(`removeAccountFromCache("${username}")`);
 		console.log("account_list", account_list);
 		var target;
 		for( const [index, entry] of account_list.entries() ){
@@ -74,73 +129,166 @@
 		account_list.splice( target, 1 );
 	    }
 
-	    function generateActionButtons (cell, row, config) {
-		const username  = row.cells[0].data;
-		const create_at = row.cells[1].data;
-		const button1 = gridjs.h('button', {
+	    function callApiToRevokeUser () {
+		const list     = action_target["config"].list;
+		const grid     = action_target["config"].grid;
+		const index    = action_target["index"];
+		const username = action_target["username"];
+		document.getElementById('dialog_for_account_deletion').close();
+		axios.post(
+			'admin_revoke_user.php',
+			{ "username": username },
+			{ headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+		)
+		.then(response => {
+			console.log("responce", response.data)
+			if( response.data.result != true ){
+				console.error("admin_revoke_user.php: error");
+				return;
+			}
+			removeAccountFromCache( username, list );
+			grid.updateConfig({ data: list }).forceRender();
+		})
+		.catch(error => console.error('Error:', error));
+	    }
+
+	    function callApiToModifyComment () {
+		const list     = action_target["config"].list;
+		const grid     = action_target["config"].grid;
+		const index    = action_target["index"];
+		const username = action_target["username"];
+		const comment  = action_target["comment"];
+		document.getElementById('dialog_for_comment_modifying').close();
+		axios.post(
+			'admin_modify_comment.php',
+			{ "username": username, "comment": comment },
+			{ headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+		)
+		.then(response => {
+			console.log("responce", response.data);
+			if( response.data.result != true ){
+				console.error("admin_modify_comment.php: error");
+				return;
+			}
+			list[index]["comment"] = comment;
+			grid.updateConfig({ data: list }).forceRender();
+		})
+		.catch(error => console.error('Error:', error));
+	    }
+
+	    function showDialogForAccountDeletion (config, index) {
+		const username     = config.list[index]["username"];
+		action_target = {
+		    "config"   : config,
+		    "index"    : index,
+		    "username" : username,
+		};
+		document.getElementById('dialog_for_account_deletion')  .showModal();
+		document.getElementById('username_for_account_deletion').textContent = username;
+	    }
+
+	    function showDialogForCommentModifying (config, index, comment) {
+		const username     = config.list[index]["username"];
+		const orig_comment = config.list[index]["comment"];
+		action_target = {
+		    "config"   : config,
+		    "index"    : index,
+		    "username" : username,
+		    "comment"  : comment,
+		    "orig_comment" : orig_comment,
+		};
+		document.getElementById('dialog_for_comment_modifying')      .showModal();
+		document.getElementById('username_for_comment_modifying')    .textContent = username;
+		document.getElementById('comment_for_comment_modifying')     .textContent = comment;
+		document.getElementById('orig_comment_for_comment_modifying').textContent = orig_comment;
+	    }
+
+	    function generateRevokeButton (config, index) {
+		const username  = config.list[index]["username"];
+		const button = gridjs.h('button', {
 		    className: 'button',
-		    onClick: () => { alert(`"${username}" "${create_at}"`) }
-		}, 'Show');
-		const button2 = gridjs.h('button', {
-		    className: 'button',
-		    onClick: () => {
-			axios.post(
-				'admin_revoke_user.php',
-				{ "username": username },
-				{ headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-			)
-			.then(response => {
-				console.log("responce", response.data)
-				if( response.data.result != true ){
-					console.error("admin_revoke_user.php: error");
-					return;
-				}
-				removeAccount( username, config.list );
-				config.grid.updateConfig({ data: config.list }).forceRender();
-			})
-			.catch(error => console.error('Error:', error));
-		    }
+		    onClick: () => { showDialogForAccountDeletion (config, index); }
 		}, 'Revoke');
 
  		// return gridjs.h('div', {}, button1, button2);
- 		return gridjs.h('div', {}, button2);
+ 		return gridjs.h('div', {}, button);
 	    }
 
+	    function generateCommentInput (config, index) {
+		const username     = config.list[index]["username"];
+		const comment_orig = config.list[index]["comment"];
+		const input = gridjs.h('input', {
+		    type: 'text',
+		    value: comment_orig,
+		    class: "gridjs-input",
+		    style: "width: 340px; padding: 1px;",
+		    onChange: (e) => { showDialogForCommentModifying (config, index, e.target.value); }
+		});
+
+ 		return input;
+	    }
+
+	    //// Initialize Step 3 : Column Setting
 	    grid.updateConfig({
 		columns: [
-		    { name: 'username',    width: "240px",
+		    { name: 'index',       hidden: true },
+		    { name: 'username',    width: "200px",
 		      data: (row) => row.username },
-		    { name: 'creation at', width: "160px",
+		    { name: 'creation at', width: "140px",
 		      data: (row) => date_formatter.format(row.creationtime*1000) },
-		    { name: 'actions',     width: "120px",
-		      formatter: (cell, row) => generateActionButtons(cell, row, available_account_config) }
+		    { name: 'actions',     width: "80px",
+		      formatter: (cell, row) => generateRevokeButton(available_account_config, row.cells[0].data) },
+		    { name: 'comment',     width: "360px",
+		      formatter: (cell, row) => generateCommentInput(available_account_config, row.cells[0].data) }
 		],
 	    }).forceRender();
 	    grid4unavail.updateConfig({
 		columns: [
-		    { name: 'username',    width: "240px",
+		    { name: 'index',       hidden: true },
+		    { name: 'username',    width: "200px",
 		      data: (row) => row.username },
-		    { name: 'creation at', width: "160px",
+		    { name: 'creation at', width: "140px",
 		      data: (row) => date_formatter.format(row.creationtime*1000) },
-		    { name: 'actions',     width: "120px",
-		      formatter: (cell, row) => generateActionButtons(cell, row, unavailable_account_config) }
+		    { name: 'actions',     width: "80px",
+		      formatter: (cell, row) => generateRevokeButton(unavailable_account_config, row.cells[0].data) },
+		    { name: 'comment',     width: "360px",
+		      formatter: (cell, row) => generateCommentInput(unavailable_account_config, row.cells[0].data) }
 		],
 	    }).forceRender();
 
-	    //// Initialize Step 3 : Data Download
+	    //// Initialize Step 4 : Dialog Event Setting
+	    document.getElementById('yes_button_for_account_deletion') .addEventListener("click", () => {
+		callApiToRevokeUser();
+	    });
+	    document.getElementById('no_button_for_account_deletion')  .addEventListener("click", () => {
+		document.getElementById('dialog_for_account_deletion').close();
+	    });
+
+	    document.getElementById('yes_button_for_comment_modifying').addEventListener("click", () => {
+		callApiToModifyComment();
+	    });
+	    document.getElementById('no_button_for_comment_modifying') .addEventListener("click", () => {
+		document.getElementById('dialog_for_comment_modifying').close();
+	    });
+
+	    //// Initialize Step 5 : Data Download
 	    axios.get( 'admin_list_users.php' )
 	    .then(response => {
-		console.log("responce", response.data)
-		available_account_config.list = response.data;
-		grid.updateConfig({ data: response.data }).forceRender();
+		console.log("responce", response.data);
+		let index = 0;
+		let indexed_data = response.data.map( e => {e["index"] = index++; return e;} );
+		available_account_config.list = indexed_data;
+		grid.updateConfig({ data: indexed_data }).forceRender();
 	    })
 	    .catch(error => console.error('Error:', error));
 
 	    axios.get( 'admin_list_users.php?unauthed=1' )
 	    .then(response => {
-		console.log("responce4unavail", response.data)
-		unavailable_account_config.list = response.data;
-		grid4unavail.updateConfig({ data: response.data }).forceRender();
+		console.log("responce4unavail", response.data);
+		let index = 0;
+		let indexed_data = response.data.map( e => {e["index"] = index++; return e;} );
+		unavailable_account_config.list = indexed_data;
+		grid4unavail.updateConfig({ data: indexed_data }).forceRender();
 	    })
 	    .catch(error => console.error('Error:', error));
 	</script>
