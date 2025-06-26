@@ -137,6 +137,7 @@ function validate_inputs() {
 
 	if( !validate_input("lang", "|^\w+$|", true, false, true) ) $ok = false;
 	if( !validate_input("unauthed", "|^[01]$|", true, false, false) ) $ok = false;
+	if( !validate_input("comment", "|^.{0,1000}$|", false, true, false) ) $ok = false;
 
 	return $ok;
 }
@@ -291,6 +292,29 @@ function store_account ($username, $totpsecret, $sessionkey) {
 	$content .= "creationtime={$now}\n";
 
 	file_put_contents("status/account_unauthed/{$username}.ini", $content);
+	return true;
+}
+
+function set_parameter_of_account ($username, $key, $value) {
+	$authedfile   = "status/account/{$username}.ini";
+	$unauthedfile = "status/account_unauthed/{$username}.ini";
+
+	if( file_exists($authedfile) )   $file = $authedfile;
+	if( file_exists($unauthedfile) ) $file = $unauthedfile;
+	if( !isset($file) ) return false;
+
+	$acct = parse_ini_file( $file );
+	if( $acct == false ) return false;
+
+	$acct["modifiedtime"] = time();
+	$acct[$key] = $value;
+
+	$content = "";
+	foreach ($acct as $k => $v) {
+		$content .= "$k = $v\n";
+	}
+	$r = file_put_contents($file, $content);
+	if( $r == false ) return false;
 	return true;
 }
 
