@@ -8,7 +8,7 @@ sub read_ini ($) {
 	open my $h, "<", $filepath or die "$filepath: cannot open, stopped";
 	while( <$h> ){
 		chomp;
-		die unless m"^(\w+)=(.*)$";
+		die "$filepath:$.: formaterror, stopped" unless m"^(\w+)\s*=\s*(.*)$";
 		$ini{$1} = $2;
 	}
 	close $h;
