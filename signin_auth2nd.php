@@ -26,7 +26,7 @@ try{
 	$pass_expiration_date     = $pass["creationtime"] + $setting["cron"]["lifetime_min_of_pass"] * 60;
 	if( $now > $issuance_expiration_date ) throw new ErrorException("expired_issuance");
 
-	if( $setting["web"]["enable_signout"] ){
+	if( $setting["web"]["enable_signout_mail"] ){
 		$username = $pass["username"];
 		$mail     = $pass["mail"];
 		$ipaddr   = $pass["ipaddr"];

@@ -32,7 +32,7 @@ auth_method = ldap
 ; app_name = OTPAccessCtl
 ; org_name = example.com
 ; lang = en
-; enable_signout = false
+; enable_signout_mail = false
 
 
 

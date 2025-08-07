@@ -81,7 +81,7 @@ function load_setting() {
 	$setting["web"]["lang"]        ??= "en";
 	$setting["web"]["default_lang"] ??= "en";
 	$setting["web"]["lang_list"] = preg_split( "/,/", $setting["web"]["lang_list"] ?? "en,ja" );
-	$setting["web"]["enable_signout"] ??= false;
+	$setting["web"]["enable_signout_mail"] ??= false;
 
 	return $setting;
 }
